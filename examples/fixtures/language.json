@@ -1,0 +1,16 @@
+{
+  "role": "language",
+  "findings": [
+    {
+      "kind": "issue",
+      "category": "language",
+      "severity": "low",
+      "paragraph_id": "P002",
+      "quote": "the the replay tool",
+      "rationale": "A repeated article interrupts the sentence.",
+      "action": "revise",
+      "replacement": "the replay tool",
+      "evidence_ids": []
+    }
+  ]
+}

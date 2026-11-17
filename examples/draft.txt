@@ -1,0 +1,5 @@
+While building a campus shuttle tracker with three classmates, I wrote the parser that turned inconsistent arrival messages into a single feed. Reviewing those errors made me interested in how software can stay useful when its inputs are unreliable.
+
+I built the the replay tool that let us investigate failures using saved messages. Our system eliminated delays for everyone on campus.
+
+In graduate school, I want to study distributed systems. Your university has outstanding resources that will help me grow.

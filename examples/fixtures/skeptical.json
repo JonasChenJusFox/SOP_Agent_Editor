@@ -1,0 +1,18 @@
+{
+  "role": "skeptical",
+  "findings": [
+    {
+      "kind": "question",
+      "category": "evidence",
+      "severity": "high",
+      "paragraph_id": "P002",
+      "quote": "Our system eliminated delays for everyone on campus.",
+      "rationale": "The notes describe a replay test. What outcome was actually measured, and for which users?",
+      "action": "verify",
+      "replacement": null,
+      "evidence_ids": [
+        "team-notes.txt"
+      ]
+    }
+  ]
+}

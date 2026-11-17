@@ -1,0 +1,16 @@
+{
+  "role": "admissions",
+  "findings": [
+    {
+      "kind": "issue",
+      "category": "admissions",
+      "severity": "medium",
+      "paragraph_id": "P003",
+      "quote": "Your university has outstanding resources that will help me grow.",
+      "rationale": "The prompt asks why this program fits. Ask the author for a verified resource and how it serves their goal.",
+      "action": "revise",
+      "replacement": null,
+      "evidence_ids": []
+    }
+  ]
+}

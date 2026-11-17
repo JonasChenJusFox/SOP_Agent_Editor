@@ -1,0 +1,33 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": ["structure", "admissions", "language", "skeptical"]
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "kind": {"type": "string", "enum": ["issue", "preserve", "question"]},
+          "category": {"type": "string", "enum": ["structure", "admissions", "language", "evidence"]},
+          "severity": {"type": "string", "enum": ["high", "medium", "low"]},
+          "paragraph_id": {"type": "string"},
+          "quote": {"type": "string"},
+          "rationale": {"type": "string"},
+          "action": {"type": "string", "enum": ["preserve", "revise", "verify"]},
+          "replacement": {"type": ["string", "null"]},
+          "evidence_ids": {"type": "array", "items": {"type": "string"}}
+        },
+        "required": [
+          "kind", "category", "severity", "paragraph_id", "quote",
+          "rationale", "action", "replacement", "evidence_ids"
+        ]
+      }
+    }
+  },
+  "required": ["role", "findings"]
+}

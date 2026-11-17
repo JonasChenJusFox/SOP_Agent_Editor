@@ -1,0 +1,27 @@
+{
+  "role": "structure",
+  "findings": [
+    {
+      "kind": "preserve",
+      "category": "structure",
+      "severity": "low",
+      "paragraph_id": "P001",
+      "quote": "Reviewing those errors made me interested in how software can stay useful when its inputs are unreliable.",
+      "rationale": "This sentence connects a specific project experience to an academic question.",
+      "action": "preserve",
+      "replacement": null,
+      "evidence_ids": []
+    },
+    {
+      "kind": "issue",
+      "category": "admissions",
+      "severity": "medium",
+      "paragraph_id": "P003",
+      "quote": "Your university has outstanding resources that will help me grow.",
+      "rationale": "The closing sentence leaves the link between the applicant's question and the program undeveloped.",
+      "action": "revise",
+      "replacement": null,
+      "evidence_ids": []
+    }
+  ]
+}
