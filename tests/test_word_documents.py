@@ -92,6 +92,30 @@ class WordDocumentsTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             editorial_document(report, self.review_run, self.run_sha)
 
+    def test_change_report_explains_excluded_optional_answer_without_promoting_it(self):
+        from admissions_editor.cloud_runtime import revision_demo_payload
+        from admissions_editor.editorial import prepare_feedback_plan
+        from test_editorial import Model
+        from test_revision import EXAMPLES
+        _, options = make_source()
+        manifest = revision_demo_payload(EXAMPLES)
+        feedback = manifest["feedback"] + "\nIf I built a model, it might sound more impressive."
+        output = {"summary": "Preserve the supplied facts and revise the language.",
+                  "decisions": options["decisions"],
+                  "answer_excerpts": [{"finding_id": key, "quote": value} for key, value in options["answers"].items()] +
+                      [{"finding_id": "language-01", "quote": "I built a model"}],
+                  "selected_skill_ids": ["sop_revise", "polish", "humanize"], "unresolved_questions": []}
+        report = build_editorial_report(self.review_run, self.run_sha)
+        plan = prepare_feedback_plan(self.review_run, self.run_sha, report,
+            {"feedback": feedback, "confirmed_facts": options["confirmed_facts"]}, Model(output))
+        self.assertNotIn("language-01", plan["answers"])
+        record = revise_document(self.review_run, plan, Editor())
+        self.assertEqual(record["status"], "ready", record["validation"])
+        text = "\n".join(paragraphs(revision_document(record, "change-report.docx")))
+        self.assertIn("评价处理说明", text)
+        self.assertIn("已排除", text)
+        self.assertNotIn("I built a model", record["candidate"])
+
 
 if __name__ == "__main__":
     unittest.main()

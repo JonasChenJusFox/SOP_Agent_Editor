@@ -605,3 +605,40 @@ Word ZIP、XML、样式、真实编号、正文与解析回读已经验证。本
 `runs/verification/feedback-docx-render.log`。结构和 DOM 检查不冒充 Word 页面的
 视觉验收。用户使用步骤与可复制命令见 [feedback.md](feedback.md)，live app
 链接位于 README 开头。
+
+## 整体评价 ValueError 中断与旧记录恢复（2026-11-22）
+
+实际失败任务的原审稿和综合报告均已完成。读取该任务保存的 feedback_plan 步骤
+响应，在内存中重放：10 条决定完整，3 段引文均来自原评价；其中一段语言问题的
+可选摘录未通过上下文事实断言校验，旧版直接抛出 ValueError，尚未进入正文写作。
+原模型响应通过 Cloudflare 的完整步骤输出接口读取，未重新调用模型，也未把
+私人正文或评价复制到测试 fixture、Git 或诊断摘要。
+
+修复 `editorial.py`：对可选摘录进行确定性处理。未确认的内容不作为新增事实，
+仍保留整体修改要求；有效重复/包含引句可归并；原始模型输出和有界处理说明保留
+在密封上下文中。必需事实仍待补，未知问题 ID、缺失决定和未知技能仍阻止继续。
+上下文重新结合原审稿 metadata 验证，不能篡改问题类型或处理说明绕过事实保护。
+页面和 Word 修改报告可查看处理说明。
+
+新增 `revision_failure.py`，云端与本机仅记录失败阶段、固定错误码、公开提示和
+异常类型，不将任意异常文字复制到平台日志。失败 API 可从原任务恢复整体评价、
+选项、补充素材、原审稿及报告绑定；旧失败记录无详细诊断时不猜测原因。前端在
+恢复期间保护新编辑，没有候选时不显示 Word 下载，也不自动发出重试 POST。
+
+| 验证 | 实际结果 |
+| --- | --- |
+| Python 全量 | 270 项通过；`runs/verification/feedback-recovery-python-tests.log` |
+| JavaScript 全量 | 84 项通过（前端 57、解析 20、Worker 7）；`feedback-recovery-node-tests.log` |
+| 新增归并与来源回归 | 8 项，覆盖可选/必需引句、假设、重复/包含、跨问题引用、未知 ID 和密封上下文篡改 |
+| 新增失败诊断回归 | 8 项，覆盖原生调度异常、本机 HTTP、D1、鉴权、旧失败恢复与私密异常去除 |
+| Word 报告 | 新增处理说明回归，排除的假设不能进入正文或确认事实 |
+| 真实失败输出离线重放 | 同一保存响应通过计划准备，无前置致命阻塞；排除 1 段非阻塞可选摘录、保留 2 段有效摘录，仍保留 7 条待处理事项；`feedback-failure-diagnostic.json` |
+| 原失败记录 API | 200，原评价和选项恢复、原审稿及四位 Reviewer 完整、未伪造候选；`feedback-recovery-existing-api.json` |
+| 原失败记录页面 | 实际 HTTPS + JSDOM 恢复同一记录，反馈和选项一致、重试按钮可用、原稿不变、无新模型 POST；`feedback-recovery-existing-ui.json` |
+| 云端完整合成流程 | `feedback_smoke.py` 以原 live URL/password 参数运行，输出 `runs/feedback-recovery-cloud-smoke`；四阶段与两份 Word 下载通过，0 模型调用 |
+| 发布 | check/deploy 通过，版本 `ce31cbbd-1cdf-4758-9f6a-324a8afd4e8c`；`feedback-recovery-cloud-check.log` / `feedback-recovery-cloud-deploy.log` |
+
+本次新增真实模型请求为 0。真实失败材料只在内存参与诊断，验证摘要只保留代码、
+条数和布尔结果；Wrangler 诊断日志也检查并移除敏感输出。旧任务保持失败历史，
+不会自动变成新稿；作者可在原修订链接恢复评价并手动生成新任务，无需重跑独立
+审稿。待核事实不能因为代码修复而被标成已证实。JSDOM 验证不是浏览器视觉验收。

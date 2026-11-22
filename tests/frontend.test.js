@@ -940,3 +940,138 @@ test("missing consolidated reports and changed originals cannot generate a globa
   inputValue(other, "#draft", "Changed source draft.");
   assert.equal(other.document.getElementById("generate-feedback-revision").disabled, true);
 });
+
+const failedFeedback = "优先改第1、3点，保留结尾。我的实际工作是实现界面，没有训练底层模型。";
+const feedbackFailureDiagnostic = {stage: "feedback_plan", code: "feedback_excerpt_invalid", user_message: "整体评价中的补充引文未通过来源校验。请核对事实陈述后重新生成，无需重新审稿。", error_type: "ValueError"};
+const failedFeedbackOptions = {essay_type: "personal_statement", word_limit: 750, writing_sample: "My own calm writing voice.",
+  glossary: [{term: "TrailPanel", definition: "The project's user interface", aliases: ["project panel"]}],
+  confirmed_facts: [{id: "FACT-INTERFACE", text: "I implemented the interface.", kind: "personal_contribution", confirmed: true, citations: [], evidence_ids: []}]};
+
+function failedFeedbackJob() {
+  return {id: revisionId, state: "failed", stage: "全文修订未完成（ValueError），请检查输入与配置。", review_job_id: "job1", source_review_id: "job1",
+    diagnostic: feedbackFailureDiagnostic,
+    result: {status: "failed", diagnostic: feedbackFailureDiagnostic, feedback: failedFeedback, feedback_options: failedFeedbackOptions,
+      review_job_id: "job1", source_review_id: "job1", run_sha256: "run-version", editorial_report_sha256: comprehensiveReport.report_sha256,
+      validation: {passed: false, blockers: [feedbackFailureDiagnostic.user_message]}, blockers: [feedbackFailureDiagnostic.user_message],
+      requires_feedback_resubmission: true, stages: [], trace: [], artifacts: []}};
+}
+
+test("a failed feedback URL restores one comment and its options without a saved plan or another model POST", async (t) => {
+  const {document, calls} = await open(t, true, "#revision=" + revisionId, {
+    reviewResult: {...reviewedResult, editorial_report: comprehensiveReport},
+    respond(path) { if (path === `/api/revisions/${revisionId}`) return new Response(JSON.stringify(failedFeedbackJob())); },
+  });
+  await until(() => !document.getElementById("generate-feedback-revision").disabled);
+  assert.equal(document.getElementById("draft").value, sample.draft);
+  assert.equal(document.getElementById("editorial-feedback").value, failedFeedback);
+  assert.equal(document.getElementById("revision-essay-type").value, failedFeedbackOptions.essay_type);
+  assert.equal(document.getElementById("revision-word-limit").value, "750");
+  assert.equal(document.getElementById("revision-sample").value, failedFeedbackOptions.writing_sample);
+  assert.equal(document.querySelector(".fact-text").value, failedFeedbackOptions.confirmed_facts[0].text);
+  assert.equal(document.querySelector(".fact-confirmed").checked, true);
+  assert.equal(document.querySelector(".glossary-term").value, "TrailPanel");
+  assert.equal(document.getElementById("full-revision-stage").textContent, feedbackFailureDiagnostic.user_message);
+  assert.match(document.getElementById("full-revision-version-note").textContent, /整体评价解析未完成/);
+  assert.doesNotMatch(document.getElementById("full-revision-version-note").textContent, /当前只提供候选/);
+  assert.equal(document.querySelectorAll("#full-revision-blockers li").length, 1);
+  assert.equal(document.getElementById("full-revision-blockers").textContent, feedbackFailureDiagnostic.user_message);
+  assert.equal(document.getElementById("revision-recovery").hidden, false);
+  assert.equal(document.getElementById("revision-recovery-feedback").hidden, false);
+  assert.equal(document.getElementById("revision-source-review").getAttribute("href"), "#run=job1");
+  assert.equal(document.querySelectorAll("#revision-pending-stage-list li").length, 4);
+  assert.equal(document.getElementById("revision-candidate").hidden, true);
+  assert.equal(document.querySelectorAll("#word-downloads a").length, 0);
+  assert.equal(document.getElementById("finalize-revision").disabled, true);
+  assert.equal(calls.filter((call) => call.body && call.path !== "/api/session").length, 0);
+});
+
+test("failed feedback can be manually corrected and retried using the same completed review", async (t) => {
+  const {document, dom, calls} = await open(t, true, "#revision=" + revisionId, {
+    reviewResult: {...reviewedResult, editorial_report: comprehensiveReport},
+    respond(path) { if (path === `/api/revisions/${revisionId}`) return new Response(JSON.stringify(failedFeedbackJob())); },
+  });
+  await until(() => !document.getElementById("generate-feedback-revision").disabled);
+  assert.equal(calls.filter((call) => call.body).length, 0);
+  const corrected = "只改善衔接和语法，保留技术原意，不增加任何项目成果。";
+  document.getElementById("editorial-feedback").value = corrected;
+  document.getElementById("editorial-feedback").dispatchEvent(new dom.window.Event("input", {bubbles: true}));
+  document.getElementById("generate-feedback-revision").click();
+  await until(() => calls.some((call) => call.path.endsWith("/feedback-revisions")));
+  await until(() => calls.filter((call) => call.path === `/api/revisions/${revisionId}`).length === 2 && !document.getElementById("inputs").disabled);
+  const submitted = calls.find((call) => call.path.endsWith("/feedback-revisions"));
+  assert.equal(submitted.body.feedback, corrected);
+  assert.equal(submitted.body.run_sha256, "run-version");
+  assert.equal(submitted.body.editorial_report_sha256, comprehensiveReport.report_sha256);
+  assert.equal(submitted.body.essay_type, "personal_statement");
+  assert.equal(submitted.body.confirmed_facts[0].id, "FACT-INTERFACE");
+  assert.equal(calls.filter((call) => call.path === "/api/reviews").length, 0);
+  assert.equal(calls.filter((call) => call.path.endsWith("/revision-plan") || call.path.endsWith("/revisions") || call.path.endsWith("/finalize")).length, 0);
+});
+
+test("an old failed record without diagnostics explains its limit without blaming model configuration", async (t) => {
+  const {document, calls} = await open(t, true, "#revision=" + revisionId, {
+    reviewResult: {...reviewedResult, editorial_report: comprehensiveReport},
+    respond(path) { if (path === `/api/revisions/${revisionId}`) return new Response(JSON.stringify({id: revisionId, state: "failed", stage: "全文修订未完成（ValueError），请检查输入与配置。", source_review_id: "job1"})); },
+  });
+  await until(() => !document.getElementById("full-revision-output").hidden);
+  assert.match(document.getElementById("full-revision-blockers").textContent, /没有详细错误原因/);
+  assert.doesNotMatch(document.getElementById("full-revision-stage").textContent, /配置|ValueError/);
+  assert.match(document.getElementById("full-revision-version-note").textContent, /尚未生成可下载的文章/);
+  assert.equal(document.querySelectorAll("#revision-pending-stage-list li").length, 0);
+  assert.equal(document.querySelectorAll("#word-downloads a").length, 0);
+  assert.equal(calls.filter((call) => call.body).length, 0);
+});
+
+test("edits made while a failed source is loading are never overwritten by stored author inputs", async (t) => {
+  let release;
+  const waiting = new Promise((resolve) => { release = resolve; });
+  const page = await open(t, true, "#revision=" + revisionId, {
+    reviewResult: {...reviewedResult, editorial_report: comprehensiveReport},
+    async respond(path) {
+      if (path === `/api/revisions/${revisionId}`) return new Response(JSON.stringify(failedFeedbackJob()));
+      if (path === "/api/reviews/job1/files/review/run.json") await waiting;
+    },
+  });
+  await until(() => page.calls.some((call) => call.path === "/api/reviews/job1/files/review/run.json"));
+  const current = "Unsaved feedback written while the source is loading.";
+  inputValue(page, "#editorial-feedback", current);
+  inputValue(page, "#draft", "Unsaved manuscript.");
+  release();
+  await until(() => !page.document.getElementById("full-revision-output").hidden);
+  assert.equal(page.document.getElementById("editorial-feedback").value, current);
+  assert.equal(page.document.getElementById("draft").value, "Unsaved manuscript.");
+  assert.equal(page.document.getElementById("results").hidden, false);
+  assert.equal(page.document.getElementById("generate-feedback-revision").disabled, true);
+  assert.equal(page.calls.filter((call) => call.body).length, 0);
+});
+
+test("global feedback processing notes explain excluded material without adding decision controls", async (t) => {
+  const notes = [
+    {finding_id: "LANG-001", excerpt_index: 0, code: "excerpt_unconfirmed", blocking: true, message: "这段补充尚不能作为已确认事实，已保留原文并列为待核实。"},
+    {finding_id: "LANG-001", excerpt_index: 1, code: "excerpt_repeated", blocking: false, message: "重复引文已归并；<img src=x> 仅作为普通文字。"},
+  ];
+  const {document, calls} = await open(t, true, "#revision=" + revisionId, {
+    reviewResult: {...reviewedResult, editorial_report: comprehensiveReport}, revisionStatus: "blocked",
+    recordPlan: {...restoredPlan, editorial_context: {feedback: failedFeedback, normalization_notes: notes}},
+  });
+  await until(() => document.querySelectorAll("#word-downloads a").length === 2);
+  const panel = document.getElementById("feedback-normalization-panel");
+  assert.equal(panel.hidden, false);
+  assert.equal(panel.open, false);
+  assert.equal(document.getElementById("feedback-normalization-title").textContent, "评价处理说明（2）");
+  assert.equal(document.querySelectorAll("#feedback-normalization-notes li").length, 2);
+  assert.match(document.getElementById("feedback-normalization-notes").textContent, /待确认：这段补充尚不能作为已确认事实/);
+  assert.match(document.getElementById("feedback-normalization-notes").textContent, /重复引文已归并/);
+  assert.equal(panel.querySelectorAll("input,select,button,img").length, 0);
+  assert.equal(calls.filter((call) => call.body).length, 0);
+});
+
+test("legacy and note-free revisions hide the optional feedback processing explanation", async (t) => {
+  const {document} = await open(t, true, "#revision=" + revisionId, {
+    reviewResult: {...reviewedResult, editorial_report: comprehensiveReport},
+    recordPlan: {...restoredPlan, editorial_context: {feedback: failedFeedback, normalization_notes: []}},
+  });
+  await until(() => document.querySelectorAll("#word-downloads a").length === 2);
+  assert.equal(document.getElementById("feedback-normalization-panel").hidden, true);
+  assert.equal(document.getElementById("feedback-normalization-notes").children.length, 0);
+});

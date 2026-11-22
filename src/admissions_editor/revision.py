@@ -145,13 +145,14 @@ def prepare_revision_plan(run, review_sha256, decisions=None, confirmed_facts=No
         raise ValueError("Plan requires the SHA-256 of the reviewed run.json bytes.")
     if editorial_context is not None:
         from .editorial import answers_from_excerpts, validate_editorial_context
-        validate_editorial_context(editorial_context, review_sha256)
         editorial_context = copy.deepcopy(editorial_context)
     if essay_type not in {"sop", "personal_statement", "short_answer"}:
         raise ValueError("essay_type must be sop, personal_statement or short_answer.")
     if not isinstance(writing_sample, str) or "\0" in writing_sample or len(writing_sample.encode()) > MAX_ESSAY_BYTES:
         raise ValueError("Voice sample must be plain text within 128 KB.")
     rows = _finding_rows(run)
+    if editorial_context is not None:
+        validate_editorial_context(editorial_context, review_sha256, findings=rows)
     by_id = {row["finding_id"]: row for row in rows}
     if decisions is None:
         decisions = [{"finding_id": key, "decision": "defer", "reason": "等待作者逐项决定"} for key in by_id]

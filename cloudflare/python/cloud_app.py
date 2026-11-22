@@ -16,6 +16,7 @@ from admissions_editor.config import revision_stage_settings
 from admissions_editor.revision_web import prepare_web_plan, validate_web_plan, revision_result, finalize_web
 from admissions_editor.editorial import (build_editorial_report, validate_editorial_report,
     validate_feedback_request, feedback_result_fields)
+from admissions_editor.revision_failure import failed_revision_result
 
 SECURITY = {"X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer",
             "Content-Security-Policy": "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
@@ -306,6 +307,14 @@ class CloudApp:
             files = await self.store.sql("SELECT DISTINCT path FROM files WHERE job_id=? AND path LIKE 'revision/%'", job_id).all()
             result["result"] = revision_result(record, row["source_id"], [f["path"].removeprefix("revision/") for f in files["results"]])
             result["result"].update(feedback_result_fields(record))
+        elif row["state"] == "failed":
+            diagnostic = None
+            try:
+                diagnostic = json.loads(await self.store.read(job_id, "internal/revision-failure.json"))
+            except (WebError, ValueError, TypeError):
+                pass
+            result["result"] = failed_revision_result(json.loads(row["input_json"]), row["source_id"], row.get("source_sha"), diagnostic)
+            result["diagnostic"] = result["result"]["diagnostic"]
         return Reply(result)
 
     async def finalize_full_revision(self, job_id, body):

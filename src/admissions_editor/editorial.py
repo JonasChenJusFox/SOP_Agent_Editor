@@ -11,6 +11,7 @@ import re
 
 from .contracts import STRING, array, choice, obj, validate
 from .review import fingerprint, sha256
+from .revision_failure import RevisionFailure
 from .webinput import WebError
 
 SKILL_IDS = ("sop_revise", "polish", "humanize")
@@ -230,10 +231,99 @@ def _assertion_in_feedback(quote, feedback):
     return False
 
 
-def validate_editorial_context(context, review_sha256=None):
+def _validate_feedback_structure(output, findings):
+    """Reject broken routing, but leave optional fact extraction recoverable."""
+    by_id = {row["finding_id"]: row for row in findings}
+    if len(by_id) != len(findings) or not isinstance(output, dict):
+        raise RevisionFailure("feedback_decisions_invalid", "feedback_plan")
+    decisions = output.get("decisions")
+    if not isinstance(decisions, list) or any(not isinstance(row, dict) or
+            not isinstance(row.get("finding_id"), str) or row["finding_id"] not in by_id or
+            row.get("decision") not in {"accept", "reject", "defer"} or
+            not isinstance(row.get("reason"), str) or not row["reason"].strip() for row in decisions):
+        raise RevisionFailure("feedback_decisions_invalid", "feedback_plan")
+    if sorted(row["finding_id"] for row in decisions) != sorted(by_id):
+        raise RevisionFailure("feedback_decisions_invalid", "feedback_plan")
+    skills = output.get("selected_skill_ids")
+    if not isinstance(skills, list) or not skills or any(not isinstance(value, str) or value not in SKILL_IDS for value in skills) or len(set(skills)) != len(skills):
+        raise RevisionFailure("feedback_skills_invalid", "feedback_plan")
+    excerpts = output.get("answer_excerpts")
+    if not isinstance(excerpts, list) or any(not isinstance(row, dict) or set(row) != {"finding_id", "quote"} or
+            not isinstance(row["finding_id"], str) or row["finding_id"] not in by_id or
+            not isinstance(row["quote"], str) for row in excerpts):
+        raise RevisionFailure("feedback_excerpt_invalid", "feedback_plan")
+    try:
+        validate(output, feedback_schema(list(by_id)), "feedback_plan")
+    except ValueError:
+        raise RevisionFailure("feedback_interpretation_invalid", "feedback_plan") from None
+    if not output["summary"].strip():
+        raise RevisionFailure("feedback_interpretation_invalid", "feedback_plan")
+    return by_id
+
+
+def normalize_feedback_interpretation(source, feedback, findings):
+    """Exclude unconfirmed optional extracts without losing the editorial plan.
+
+    Raw model output is retained separately whenever this changes anything.
+    Only already valid verbatim assertions can be deduplicated. No rejected
+    quote is repaired, enlarged, or promoted into factual authority.
+    """
+    by_id = _validate_feedback_structure(source, findings)
+    result = copy.deepcopy(source)
+    decisions = {row["finding_id"]: row["decision"] for row in source["decisions"]}
+    kept, notes = [], []
+
+    def note(index, row, code, *, blocking=False):
+        messages = {
+            "excerpt_not_explicit_assertion": "模型提取的补充回答未确认为明确事实，已排除；修改要求仍按整体评价处理。",
+            "duplicate_excerpt": "重复的已确认引句已合并，原始模型记录保留。",
+            "nested_excerpt": "包含关系的已确认引句已合并，保留完整的原始来源片段。",
+            "overlapping_excerpt": "重复覆盖同一来源的引句已排除，已确认片段仍保留。",
+        }
+        message = row["finding_id"] + "：" + messages[code]
+        if blocking:
+            message = row["finding_id"] + "：部分补充回答未确认为事实，请补充已核对的信息；当前不能据此接受最终稿。"
+        notes.append({"finding_id": row["finding_id"], "excerpt_index": index,
+                      "code": code, "blocking": blocking, "message": message})
+
+    for index, row in enumerate(source["answer_excerpts"]):
+        finding = by_id[row["finding_id"]]
+        required = finding.get("kind") == "question" or finding.get("action") == "verify"
+        if not _assertion_in_feedback(row["quote"], feedback):
+            note(index, row, "excerpt_not_explicit_assertion",
+                 blocking=required and decisions[row["finding_id"]] == "accept")
+            continue
+        quote = row["quote"].strip()
+        same_finding = [entry for entry in kept if entry[1]["finding_id"] == row["finding_id"]]
+        if any(quote == other["quote"].strip() for _, other in same_finding):
+            note(index, row, "duplicate_excerpt")
+            continue
+        if any(quote in other["quote"].strip() for _, other in same_finding):
+            note(index, row, "nested_excerpt")
+            continue
+        nested = [(other_index, other) for other_index, other in same_finding if other["quote"].strip() in quote]
+        candidate = [entry for entry in kept if entry not in nested]
+        try:
+            answers_from_excerpts([other for _, other in candidate] + [row], feedback)
+        except ValueError:
+            note(index, row, "overlapping_excerpt")
+            continue
+        for other_index, other in nested:
+            note(other_index, other, "nested_excerpt")
+        kept = candidate + [(index, copy.deepcopy(row))]
+    result["answer_excerpts"] = [row for _, row in kept]
+    notes.sort(key=lambda item: (item["excerpt_index"], item["code"]))
+    for item in notes:
+        if item["blocking"] and item["message"] not in result["unresolved_questions"]:
+            result["unresolved_questions"].append(item["message"])
+    return result, notes
+
+
+def validate_editorial_context(context, review_sha256=None, *, findings=None):
     required = {"schema_version", "feedback", "feedback_sha256", "editorial_report_sha256", "review_sha256",
                 "selected_skill_ids", "interpretation", "generation_source"}
-    if not isinstance(context, dict) or set(context) != required or context.get("schema_version") != CONTEXT_VERSION:
+    normalization_fields = {"source_interpretation", "normalization_notes"}
+    if not isinstance(context, dict) or set(context) not in (required, required | normalization_fields) or context.get("schema_version") != CONTEXT_VERSION:
         raise ValueError("Invalid global editorial context.")
     feedback = context["feedback"]
     if not isinstance(feedback, str) or not feedback.strip() or "\0" in feedback or len(feedback.encode()) > MAX_FEEDBACK_BYTES or \
@@ -242,6 +332,12 @@ def validate_editorial_context(context, review_sha256=None):
             not all(isinstance(context[key], str) and re.fullmatch(r"[0-9a-f]{64}", context[key]) for key in ("review_sha256", "editorial_report_sha256")):
         raise ValueError("Global feedback does not match its source hashes.")
     result = context["interpretation"]
+    if normalization_fields <= set(context):
+        if findings is None:
+            raise RevisionFailure("plan_validation_failed", "prepare_plan")
+        normalized, notes = normalize_feedback_interpretation(context["source_interpretation"], feedback, findings)
+        if not notes or normalized != result or notes != context["normalization_notes"]:
+            raise RevisionFailure("plan_validation_failed", "prepare_plan")
     ids = [row.get("finding_id") for row in result.get("decisions", [])] if isinstance(result, dict) else []
     if any(not isinstance(item, str) or not item for item in ids) or len(set(ids)) != len(ids):
         raise ValueError("Invalid global decision IDs.")
@@ -315,13 +411,14 @@ def prepare_feedback_plan(run, run_sha256, report, body, provider=None, *, knowl
                "essay_type": body.get("essay_type", "sop"), "local_skill_catalog": skill_catalog()}
     output = provider.task("feedback_plan", payload, feedback_schema([row["finding_id"] for row in findings])) if provider is not None else \
         _offline_interpretation(run, feedback, demo_manifest)
-    validate(output, feedback_schema([row["finding_id"] for row in findings]), "feedback_plan")
-    ids = [row["finding_id"] for row in output["decisions"]]
-    if sorted(ids) != sorted(row["finding_id"] for row in findings):
-        raise ValueError("Feedback interpretation must decide every original finding exactly once.")
-    context = validate_editorial_context({"schema_version": CONTEXT_VERSION, "feedback": feedback,
+    source_output = copy.deepcopy(output)
+    output, notes = normalize_feedback_interpretation(source_output, feedback, findings)
+    context = {"schema_version": CONTEXT_VERSION, "feedback": feedback,
         "feedback_sha256": sha256(feedback.encode()), "editorial_report_sha256": report["report_sha256"], "review_sha256": run_sha256,
-        "selected_skill_ids": output["selected_skill_ids"], "interpretation": output, "generation_source": "model" if provider else "offline_fixture"}, run_sha256)
+        "selected_skill_ids": output["selected_skill_ids"], "interpretation": output, "generation_source": "model" if provider else "offline_fixture"}
+    if notes:
+        context.update(source_interpretation=source_output, normalization_notes=notes)
+    context = validate_editorial_context(context, run_sha256, findings=findings)
     return prepare_revision_plan(run, run_sha256, decisions=output["decisions"], confirmed_facts=body.get("confirmed_facts", []),
         answers=answers_from_excerpts(output["answer_excerpts"], feedback), essay_type=body.get("essay_type", "sop"),
         writing_sample=body.get("writing_sample", ""), word_limit=body.get("word_limit"), glossary=body.get("glossary"),
@@ -332,5 +429,8 @@ def feedback_result_fields(record):
     context = record.get("plan", {}).get("editorial_context")
     if not context:
         return {}
-    return {"feedback": context["feedback"], "feedback_analysis": copy.deepcopy(context["interpretation"]),
-            "selected_skill_ids": list(context["selected_skill_ids"])}
+    result = {"feedback": context["feedback"], "feedback_analysis": copy.deepcopy(context["interpretation"]),
+              "selected_skill_ids": list(context["selected_skill_ids"])}
+    if context.get("normalization_notes"):
+        result["feedback_normalization_notes"] = copy.deepcopy(context["normalization_notes"])
+    return result

@@ -27,6 +27,7 @@ from .webinput import MAX_BODY, MAX_TEXT, WebError, normalize_input
 from .revision_web import prepare_web_plan, validate_web_plan, revision_result, finalize_web
 from .editorial import (build_editorial_report, validate_editorial_report, render_editorial_report,
     validate_feedback_request, prepare_feedback_plan, feedback_result_fields)
+from .revision_failure import failure_diagnostic, failed_revision_result
 EXAMPLES = Path(__file__).resolve().parents[2] / "examples"
 STATIC = {"/": ("index.html", "text/html; charset=utf-8"),
           "/app.js": ("app.js", "text/javascript; charset=utf-8"),
@@ -47,10 +48,11 @@ def private_json(path, value):
 
 
 class TrackedProvider:
-    def __init__(self, provider, app, job_id):
+    def __init__(self, provider, app, job_id, on_stage=None):
         self.provider, self.app, self.job_id = provider, app, job_id
         self.returned = set()
         self.lock = threading.Lock()
+        self.on_stage = on_stage
 
     def __getattr__(self, name):
         return getattr(self.provider, name)
@@ -64,6 +66,8 @@ class TrackedProvider:
                 self.app.update(self.job_id, stage=f"独立审稿：已返回 {len(self.returned)}/4 个角色")
 
     def task(self, task, payload, schema):
+        if self.on_stage is not None:
+            self.on_stage(task)
         names = {"observe": "裁决第一阶段：独立观察", "decide": "裁决第二阶段：逐组决定",
                  "editorial_report": "生成综合建议报告", "feedback_plan": "解析整体评价并选择写作 skills",
                  "sop_revise": "全文修订：结构与内容", "polish": "语言润色", "humanize": "Humanizer：最后编辑", "verify_revision": "只读核验：技术含义、事实、要求与采纳覆盖"}
@@ -250,6 +254,15 @@ class WebApp:
                 names = [str(path.relative_to(folder)) for path in folder.rglob("*") if path.is_file()]
                 job["result"] = revision_result(record, job["source_id"], names)
                 job["result"].update(feedback_result_fields(record))
+            elif job["state"] == "failed":
+                diagnostic = None
+                try:
+                    diagnostic = json.loads((self.root / job_id / "internal/revision-failure.json").read_text())
+                except (OSError, ValueError, TypeError):
+                    pass
+                inputs = json.loads((self.root / job_id / "input.json").read_text())
+                job["result"] = failed_revision_result(inputs, job["source_id"], job.get("source_sha"), diagnostic)
+                job["diagnostic"] = job["result"]["diagnostic"]
             return job
         if job["state"] in {"complete", "partial"}:
             run = self.read_run(job_id)
@@ -348,9 +361,16 @@ class WebApp:
     def execute_revision(self, job_id, plan):
         from .cli import publish_directory
         from .revision import revise_document, revision_artifacts
+        active_stage = "source_review"
+
+        def track_stage(stage):
+            nonlocal active_stage
+            active_stage = stage
+
         try:
             job = self.job(job_id)
             source = self.read_run(job["source_id"], job["source_sha"])
+            active_stage = "feedback_plan" if plan is None else "prepare_plan"
             if job["mode"] == "demo":
                 provider = FixtureProvider(self.examples / "revision" / "fixtures")
             else:
@@ -360,11 +380,13 @@ class WebApp:
                 planner = provider.providers["sop_revise"] if hasattr(provider, "providers") else None
                 planner = planner if planner and str(planner.label).startswith("openai:") else None
                 plan = prepare_feedback_plan(source, job["source_sha"], inputs["editorial_report"], inputs["feedback_request"],
-                    TrackedProvider(planner, self, job_id) if planner else None,
+                    TrackedProvider(planner, self, job_id, track_stage) if planner else None,
                     knowledge_context=inputs.get("knowledge_context"), demo_manifest=self.revision_demo() if planner is None else None)
+            active_stage = "prepare_plan"
             self.assert_knowledge_current(plan.get("knowledge_context"))
             self.update(job_id, state="running", stage="准备作者确认的全文修改计划")
-            record = revise_document(source, plan, TrackedProvider(provider, self, job_id))
+            record = revise_document(source, plan, TrackedProvider(provider, self, job_id, track_stage))
+            active_stage = "publish_revision"
             artifacts = revision_artifacts(record)
             if plan.get("editorial_context"):
                 artifacts["feedback-analysis.json"] = json_bytes(plan["editorial_context"])
@@ -372,7 +394,14 @@ class WebApp:
             self.update(job_id, state="complete" if record["status"] == "ready" else "partial",
                         stage="全文核验通过，请检查候选和 Diff 后接受" if record["status"] == "ready" else "全文候选有待处理项，请查看核验结果")
         except Exception as error:
-            self.update(job_id, state="failed", stage=f"全文修订未完成（{type(error).__name__}），请检查输入与配置。")
+            diagnostic = failure_diagnostic(error, active_stage)
+            try:
+                folder = self.root / job_id / "internal"
+                folder.mkdir(mode=0o700, exist_ok=True)
+                private_json(folder / "revision-failure.json", diagnostic)
+            except (OSError, ValueError, TypeError):
+                pass
+            self.update(job_id, state="failed", stage=diagnostic["user_message"])
 
     def finalize_full_revision(self, job_id, body):
         job = self.job(job_id)

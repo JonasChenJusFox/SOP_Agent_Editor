@@ -169,6 +169,10 @@ def revision_document(record, filename):
         summary = context.get("interpretation", {}).get("summary")
         if summary:
             rows.append(("Normal", "模型解析：" + summary, False))
+        if context.get("normalization_notes"):
+            rows.append(("Heading2", "评价处理说明", False))
+            for note in context["normalization_notes"]:
+                rows.append(("Normal", ("待核实：" if note["blocking"] else "说明：") + note["message"], False))
     names = {"sop_revise": "SOP Reviser", "polish": "Language Polisher", "humanize": "Humanizer"}
     skills = context.get("selected_skill_ids", ["sop_revise", "polish", "humanize"])
     rows.append(("Normal", "重点匹配的编辑 skills：" + "、".join(names.get(s, s) for s in skills), False))

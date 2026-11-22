@@ -7,7 +7,7 @@ const state = {mode: "configured", evidence: [], busy: false, reading: false, jo
 const revisionState = {plan: null, planDirty: true, epoch: 0, id: null, result: null, diffLoaded: false, accepted: false, pending: false, factCounter: 0, sourceReviewId: null};
 const authState = {authenticated: false, workspaceOpened: false, expired: false, pollTimer: null, activePoll: null, resumeGet: null};
 const revisionDecisionLabels = {accept: "采纳", reject: "拒绝", defer: "暂缓"};
-const revisionStageLabels = {sop_revise: "全文修订", polish: "语言润色", humanize: "Humanizer 编辑", verify_revision: "只读核验"};
+const revisionStageLabels = {source_review: "恢复原审稿", feedback_plan: "整体评价解析", prepare_plan: "修改计划校验", sop_revise: "全文修订", polish: "语言润色", humanize: "Humanizer 编辑", verify_revision: "只读核验", publish_revision: "保存修订结果", unknown: "修订处理"};
 const factKindLabels = {author_confirmation: "作者确认的其他事实", personal_contribution: "个人贡献", team_outcome: "团队成果", number: "数字或测量结果", program_info: "申请项目资料", goal: "未来目标", motivation: "申请动机"};
 
 function notice(message = "", error = false) {
@@ -553,6 +553,8 @@ function resetFullRevision(job) {
   byId("word-downloads").replaceChildren();
   byId("revision-change-summary").replaceChildren();
   byId("revision-skills").textContent = "";
+  byId("feedback-normalization-panel").hidden = true;
+  byId("feedback-normalization-notes").replaceChildren();
   byId("revision-essay-type").value = "sop";
   byId("revision-plan-note").textContent = job.result.status === "complete" ? "请逐项决定，然后准备修订计划。" : "本轮审稿尚未完整完成，请先恢复裁决或重新审稿。";
   byId("revision-plan-blockers").replaceChildren();
@@ -758,6 +760,21 @@ function renderTechnicalAccuracy(report) {
   if (!issues.length && !passed) list.append(element("li", "技术检查尚未完整通过，请查看可下载的技术核验记录。"));
 }
 
+function restoreRevisionOptions(options) {
+  if (!options || typeof options !== "object") return;
+  if ("essay_type" in options) byId("revision-essay-type").value = options.essay_type || "sop";
+  if ("word_limit" in options) byId("revision-word-limit").value = options.word_limit || "";
+  if ("writing_sample" in options) byId("revision-sample").value = options.writing_sample || "";
+  if (Array.isArray(options.confirmed_facts)) {
+    byId("revision-facts").replaceChildren(); revisionState.factCounter = 0;
+    for (const fact of options.confirmed_facts) if (typeof fact.id === "string" && !fact.id.startsWith("ANSWER-")) { addRevisionFact(fact); revisionState.factCounter++; }
+  }
+  if (Array.isArray(options.glossary)) {
+    byId("revision-glossary").replaceChildren();
+    for (const term of options.glossary) addGlossaryTerm(term);
+  }
+}
+
 function renderPlan(plan, restore = false) {
   revisionState.plan = plan;
   revisionState.planDirty = false;
@@ -770,15 +787,7 @@ function renderPlan(plan, restore = false) {
   byId("revision-questions").replaceChildren(...(plan.unresolved_questions || []).map((item) => element("li", "待补：" + issueText(item))));
   renderTechnicalContext(plan.technical_context);
   renderKnowledge(plan.knowledge_context, "revision", plan.knowledge_warnings || []);
-  if (restore) {
-    byId("revision-essay-type").value = plan.essay_type || "sop";
-    byId("revision-word-limit").value = plan.word_limit || "";
-    byId("revision-sample").value = plan.writing_sample || "";
-    byId("revision-facts").replaceChildren(); revisionState.factCounter = 0;
-    for (const fact of plan.confirmed_facts || []) if (!fact.id.startsWith("ANSWER-")) { addRevisionFact(fact); revisionState.factCounter++; }
-    byId("revision-glossary").replaceChildren();
-    for (const term of plan.glossary || []) addGlossaryTerm(term);
-  }
+  if (restore) restoreRevisionOptions(plan);
   refreshFullRevision();
 }
 
@@ -797,6 +806,10 @@ function rejectedWritingStage(report) {
 function revisionBlockerDisplay(result) {
   const technical = result?.technical_accuracy || result?.validation?.technical_accuracy;
   const paused = rejectedWritingStage(technical), items = revisionBlockers(result).map(issueText);
+  if (result?.status === "failed" && result.diagnostic?.user_message) {
+    const pending = ["source_review", "feedback_plan", "prepare_plan"].includes(result.diagnostic.stage) ? ["sop_revise", "polish", "humanize", "verify_revision"] : [];
+    return {paused: null, items: [...new Set([result.diagnostic.user_message, ...items])], pending};
+  }
   if (!paused) return {paused: null, items, pending: []};
   const issues = Array.isArray(technical.issues) ? technical.issues : [];
   const reasons = new Set(issues.map((issue) => issue.reason || issue.message).filter(Boolean));
@@ -809,11 +822,17 @@ function revisionBlockerDisplay(result) {
 
 function renderRevisionRecovery(result, display) {
   const pending = byId("revision-pending-stages"), list = byId("revision-pending-stage-list");
-  pending.hidden = !display.paused;
+  pending.hidden = !display.pending.length;
   list.replaceChildren(...display.pending.map((stage) => element("li", `${revisionStageLabels[stage] || stage}：尚未运行`)));
   const legacy = result.legacy_read_only || result.requires_replan;
-  byId("revision-recovery").hidden = !display.paused && !legacy;
-  byId("revision-recovery-note").textContent = legacy ? "作者材料已保留。请检查现有输入，重新准备修订计划后生成全文，以应用当前核验规则。" : "请核对并确认实际分工和资料，重新准备修订计划后，再生成全文。";
+  const feedbackFailure = result.status === "failed" && (result.requires_feedback_resubmission || result.feedback_options || result.diagnostic);
+  byId("revision-recovery").hidden = !display.paused && !legacy && !feedbackFailure;
+  byId("revision-recovery-note").textContent = feedbackFailure ? "原审稿仍保留。请核对整体评价和补充材料，再手动点击“生成优化文章和修改报告”；无需重跑四位审稿。" : legacy ? "作者材料已保留。请检查现有输入，重新准备修订计划后生成全文，以应用当前核验规则。" : "请核对并确认实际分工和资料，重新准备修订计划后，再生成全文。";
+  byId("revision-recovery-feedback").hidden = !feedbackFailure;
+  byId("revision-recovery-facts").hidden = Boolean(feedbackFailure);
+  const sourceLink = byId("revision-source-review"), sourceId = revisionSourceId(result) || revisionState.sourceReviewId;
+  sourceLink.hidden = !feedbackFailure || !sourceId;
+  if (sourceId) sourceLink.href = `#run=${encodeURIComponent(sourceId)}`;
   const knowledge = result.knowledge_context || result.plan?.knowledge_context;
   const missing = display.paused && knowledge && ["missing", "unavailable", "stale", "partial"].includes(knowledge.status);
   const guidance = byId("revision-source-guidance");
@@ -864,16 +883,21 @@ async function readDiff(jobId) {
 }
 
 async function renderFullRevision(job, restoring = false) {
-  const result = job.result || {status: "failed", blockers: [job.stage || "修订任务未完成。"]};
+  const fallback = "修订任务未完成，当前记录没有详细错误原因。原审稿仍保留，请核对整体评价后手动重试。";
+  const result = job.result || {status: "failed", diagnostic: job.diagnostic, requires_feedback_resubmission: true, blockers: [job.diagnostic?.user_message || fallback]};
+  if (!result.diagnostic && job.diagnostic) result.diagnostic = job.diagnostic;
   revisionState.result = result; revisionState.id = job.id; revisionState.diffLoaded = false; revisionState.accepted = false;
+  byId("results").hidden = false;
   byId("full-revision-output").hidden = false;
   byId("accept-full-revision").checked = false;
   byId("final-essay-downloads").replaceChildren();
   if (result.plan && (restoring || !revisionState.plan)) renderPlan(result.plan, restoring);
   if (restoring) {
+    if (result.feedback_options) restoreRevisionOptions(result.feedback_options);
     const feedback = result.feedback ?? result.feedback_analysis?.feedback ?? result.plan?.editorial_context?.feedback;
     if (typeof feedback === "string") byId("editorial-feedback").value = feedback;
   }
+  if (result.requires_feedback_resubmission && !result.plan) { revisionState.plan = null; revisionState.planDirty = true; }
   const legacy = result.legacy_read_only || result.requires_replan;
   if (legacy) revisionState.planDirty = true;
   const candidate = result.candidate_text || result.candidate || "";
@@ -881,7 +905,8 @@ async function renderFullRevision(job, restoring = false) {
   const display = revisionBlockerDisplay(result);
   byId("full-revision-status").textContent = legacy ? "旧版候选记录 · 需要重新准备计划（有阻塞项）" : ready ? "完整修订稿 · 核验通过，待作者接受" : display.paused ? `${revisionStageLabels[display.paused]}提案暂停 · 技术检查有阻塞项` : candidate ? "候选完整稿 · 尚有阻塞项" : "修订未完成";
   const later = display.pending.map((stage) => revisionStageLabels[stage] || stage).join("、");
-  byId("full-revision-version-note").textContent = legacy ? "旧版候选记录，作者材料已保留。以下为当时的核验结果；请重新准备计划后生成，不能直接接受旧候选。" : ready ? "已完成全文修订、语言润色、最后的 Humanizer 编辑及只读核验；接受前请比较全文和 Diff。" : display.paused ? `${revisionStageLabels[display.paused]}提案在技术检查时暂停，${later}尚未运行。当前显示上一版保留文本，不能接受为最终稿。` : "当前只提供候选与处理记录，请先解决阻塞项；尚不能接受为最终稿。";
+  const failure = result.status === "failed" && !candidate;
+  byId("full-revision-version-note").textContent = failure ? `${result.diagnostic?.stage && result.diagnostic.stage !== "unknown" ? (revisionStageLabels[result.diagnostic.stage] || "修订处理") + "未完成。" : "本次尚未生成可下载的文章。"}请查看下面的具体说明，核对整体评价后手动重试。原审稿仍保留。` : legacy ? "旧版候选记录，作者材料已保留。以下为当时的核验结果；请重新准备计划后生成，不能直接接受旧候选。" : ready ? "已完成全文修订、语言润色、最后的 Humanizer 编辑及只读核验；接受前请比较全文和 Diff。" : display.paused ? `${revisionStageLabels[display.paused]}提案在技术检查时暂停，${later}尚未运行。当前显示上一版保留文本，不能接受为最终稿。` : "当前只提供候选与处理记录，请先解决阻塞项；尚不能接受为最终稿。";
   const blockers = [...display.items];
   if (candidate && !candidateMatchesReview(result)) blockers.push("修订稿与当前审稿版本不匹配，请刷新原审稿任务或重新准备计划。");
   byId("full-revision-blockers").replaceChildren(...blockers.map((item) => element("li", issueText(item))));
@@ -924,6 +949,12 @@ function renderWordOutputs(job, result, ready, legacy) {
   const selected = result.selected_skill_ids || result.feedback_analysis?.selected_skill_ids || result.plan?.editorial_context?.selected_skill_ids || [];
   const names = {"sop_reviser": "SOP Reviser", "sop-reviser": "SOP Reviser", "sop_revise": "SOP Reviser", "language_polisher": "Language Polisher", "language-polisher": "Language Polisher", "polish": "Language Polisher", "humanizer": "Humanizer", "humanize": "Humanizer", "general_writing": "General Writing", "general-writing": "General Writing"};
   byId("revision-skills").textContent = selected.length ? "使用的写作指引：" + selected.map((id) => names[id] || id).join(" → ") : "处理顺序：全文修改 → 语言润色 → Humanizer → 只读核验。";
+  const rawNotes = result.plan?.editorial_context?.normalization_notes;
+  const notes = Array.isArray(rawNotes) ? [...new Map(rawNotes.filter((note) => typeof note?.message === "string" && note.message.trim()).map((note) => [`${Boolean(note.blocking)}:${note.message}`, note])).values()] : [];
+  const panel = byId("feedback-normalization-panel"), list = byId("feedback-normalization-notes");
+  panel.hidden = !notes.length;
+  byId("feedback-normalization-title").textContent = `评价处理说明${notes.length ? `（${notes.length}）` : ""}`;
+  list.replaceChildren(...notes.map((note) => element("li", (note.blocking ? "待确认：" : "") + note.message)));
   const changes = result.change_report || result.change_summary;
   if (typeof changes?.summary === "string") summary.append(element("p", changes.summary));
   const items = Array.isArray(changes?.changes) ? changes.changes : Array.isArray(changes) ? changes : [];
@@ -953,11 +984,12 @@ function renderRevisionTrace(result) {
   if (!trace.children.length) trace.append(element("li", "详细逐项记录见可下载的修改轨迹。"));
 }
 
-async function restoreRevisionSource(job) {
+async function restoreRevisionSource(job, expectedEpoch) {
   const sourceId = revisionSourceId(job);
   if (!sourceId) throw new Error("未能恢复原审稿版本，请从原审稿任务重新打开修订。候选全文仍保存在服务端。");
   const source = await api(`/api/reviews/${sourceId}`);
   const run = await api(`/api/reviews/${sourceId}/files/review/run.json`);
+  if (state.dirty || (expectedEpoch !== undefined && expectedEpoch !== revisionState.epoch)) return false;
   state.job = sourceId; state.mode = source.mode; state.dirty = false;
   for (const key of ["draft", "requirements", "preferences"]) byId(key).value = run.snapshot[key];
   state.evidence = suppliedEvidence(run.snapshot);
@@ -966,6 +998,7 @@ async function restoreRevisionSource(job) {
   byId("as-of").value = run.context.as_of;
   renderEvidence(); refreshMode(); renderResult(source);
   revisionState.id = job.id;
+  return true;
 }
 
 function revisionSourceId(job) {
@@ -983,13 +1016,15 @@ async function watchRevision(jobId, restoring = false) {
   try {
     const job = await api(`/api/revisions/${jobId}`);
     if (revisionState.id !== jobId) return;
-    if (restoring && revisionState.sourceReviewId !== revisionSourceId(job)) await restoreRevisionSource(job);
-    byId("progress-text").textContent = job.stage || "正在处理全文修订";
-    byId("full-revision-stage").textContent = job.stage || "正在处理全文修订";
+    let restoreInputs = restoring && !state.dirty && poll.editEpoch === revisionState.epoch;
+    if (restoreInputs && revisionState.sourceReviewId !== revisionSourceId(job)) restoreInputs = await restoreRevisionSource(job, poll.editEpoch);
+    const progress = job.diagnostic?.user_message || job.result?.diagnostic?.user_message || (job.state === "failed" && !job.result ? "修订任务未完成，原审稿仍保留。请核对整体评价后手动重试。" : job.stage) || "正在处理全文修订";
+    byId("progress-text").textContent = progress;
+    byId("full-revision-stage").textContent = progress;
     if (["complete", "partial", "failed", "ready", "blocked"].includes(job.state)) {
       setBusy(false);
       authState.activePoll = null;
-      await renderFullRevision(job, restoring);
+      await renderFullRevision(job, restoreInputs);
     } else authState.pollTimer = setTimeout(() => watchRevision(jobId, restoring), 1200);
   } catch (error) {
     if (error.status === 401) authState.resumeGet = poll;
@@ -1018,6 +1053,11 @@ for (const [linkId, targetId] of [["revision-recovery-facts", "revision-facts"],
     target.scrollIntoView?.({block: "start", behavior: "smooth"});
   });
 }
+byId("revision-recovery-feedback").addEventListener("click", (event) => {
+  event.preventDefault();
+  byId("editorial-feedback").scrollIntoView?.({block: "center", behavior: "smooth"});
+  byId("editorial-feedback").focus();
+});
 
 byId("prepare-revision").addEventListener("click", async () => {
   if (!ensureAuthenticated()) return;

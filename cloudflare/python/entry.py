@@ -8,6 +8,7 @@ from workers import Response, WorkerEntrypoint, WorkflowEntrypoint, fetch
 
 from admissions_editor.cloud_runtime import next_action, next_revision_action, next_feedback_revision_action
 from admissions_editor.review import sha256
+from admissions_editor.revision_failure import RevisionFailure, failure_diagnostic
 from cloud_app import CloudApp, SECURITY, Store
 
 ROOT = Path(__file__).parent
@@ -85,13 +86,14 @@ class ReviewWorkflow(WorkflowEntrypoint):
 
     async def run_revision(self, job, step, store):
         job_id = job["id"]
+        active_stage = "source_review"
         try:
             source_text = await store.read(job["source_id"], "review/run.json")
             if sha256(source_text.encode()) != job["source_sha"]:
-                await store.update(job_id, "failed", "来源审稿版本不符，请重新准备全文计划。")
-                return {"state": "failed"}
+                raise RevisionFailure("source_changed", "source_review")
             run = json.loads(source_text)
             inputs = json.loads(job["input_json"])
+            active_stage = "feedback_plan" if "feedback_request" in inputs else "prepare_plan"
             plan = inputs.get("plan")
             config = json.loads(job["config_json"])
             responses = {}
@@ -101,6 +103,7 @@ class ReviewWorkflow(WorkflowEntrypoint):
                     inputs["feedback_request"], config, responses, EXAMPLES, job["mode"], inputs.get("knowledge_context")) if "feedback_request" in inputs else \
                     next_revision_action(run, plan, config, responses, EXAMPLES, job["mode"])
                 if action["complete"]:
+                    active_stage = "publish_revision"
                     @step.do("publish-full-revision", config={"retries": {"limit": 0, "delay": "1 second", "backoff": "constant"}, "timeout": "5 minutes"})
                     async def publish_revision():
                         current = await store.job(job_id)
@@ -112,6 +115,7 @@ class ReviewWorkflow(WorkflowEntrypoint):
                     return await publish_revision()
                 labels = {"feedback_plan": "解析整体评价并选择写作 skills", "sop_revise": "全文修订：结构与内容", "polish": "语言润色",
                           "humanize": "Humanizer：最后编辑", "verify_revision": "只读核验：技术含义、事实、要求与采纳覆盖"}
+                active_stage = action["call_id"]
                 await store.update(job_id, "running", labels[action["call_id"]])
 
                 @step.do("revision-model-" + action["call_id"] + "-" + action["key"][:16],
@@ -122,7 +126,14 @@ class ReviewWorkflow(WorkflowEntrypoint):
                 responses[action["key"]] = await revision_call()
             raise RuntimeError("Full revision call limit exceeded")
         except Exception as error:
-            await store.update(job_id, "failed", "全文修订未完成（" + type(error).__name__ + "），请检查输入与配置。")
+            diagnostic = failure_diagnostic(error, active_stage)
+            try:
+                await store.write(job_id, {"internal/revision-failure.json": json.dumps(diagnostic, ensure_ascii=False)},
+                                  ("failed", diagnostic["user_message"]))
+            except Exception:
+                # Never replace the real failure with a storage exception or
+                # leak exception strings containing author text to the host.
+                await store.update(job_id, "failed", diagnostic["user_message"])
             return {"state": "failed"}
 
 
