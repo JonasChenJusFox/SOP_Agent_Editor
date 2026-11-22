@@ -1,0 +1,17 @@
+{
+  "role": "language",
+  "findings": [
+    {
+      "kind": "issue",
+      "category": "language",
+      "severity": "low",
+      "paragraph_id": "P002",
+      "quote": "I built the the prototype.",
+      "rationale": "The synthetic evidence or explicit requirement does not support this passage.",
+      "action": "revise",
+      "replacement": "I built the prototype.",
+      "requirement_id": null,
+      "evidence_ids": []
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "team-notes.txt": {
+    "type": "team_record",
+    "origin": "synthetic demo notes; no real applicant",
+    "retrieved_at": "2026-11-18",
+    "valid_until": "",
+    "scope": "campus-shuttle-demo"
+  },
+  "program.txt": {
+    "type": "official_program",
+    "origin": "fictional program handout for synthetic testing only",
+    "retrieved_at": "2026-11-18",
+    "valid_until": "",
+    "scope": "northbridge-demo"
+  }
+}

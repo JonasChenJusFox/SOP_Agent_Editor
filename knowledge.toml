@@ -1,0 +1,17 @@
+# Paths are relative to this file. Populate these read-only source repositories
+# once; review and revision commands then load them without --repo arguments.
+[knowledge]
+enabled = true
+index = "private/knowledge/index.sqlite3"
+auto_refresh = true
+limit_per_claim = 3
+
+[[knowledge.sources]]
+name = "nearbite"
+path = "private/knowledge/repos/nearbite"
+required = true
+
+[[knowledge.sources]]
+name = "aitherpath"
+path = "private/knowledge/repos/aitherpath"
+required = true

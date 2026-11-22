@@ -1,0 +1,149 @@
+{
+  "checks": [
+    {
+      "check": "factual_consistency",
+      "passed": true,
+      "rationale": "Synthetic fixture check: scope, prompt, author choices and source quotations are consistent."
+    },
+    {
+      "check": "requirements",
+      "passed": true,
+      "rationale": "Synthetic fixture check: scope, prompt, author choices and source quotations are consistent."
+    },
+    {
+      "check": "accepted_findings",
+      "passed": true,
+      "rationale": "Synthetic fixture check: scope, prompt, author choices and source quotations are consistent."
+    },
+    {
+      "check": "rejected_findings",
+      "passed": true,
+      "rationale": "Synthetic fixture check: scope, prompt, author choices and source quotations are consistent."
+    },
+    {
+      "check": "voice",
+      "passed": true,
+      "rationale": "Synthetic fixture check: scope, prompt, author choices and source quotations are consistent."
+    },
+    {
+      "check": "document_type",
+      "passed": true,
+      "rationale": "Synthetic fixture check: scope, prompt, author choices and source quotations are consistent."
+    }
+  ],
+  "finding_checks": [
+    {
+      "finding_id": "structure-01",
+      "status": "preserved",
+      "quote": "Reviewing those errors made me interested in how software can stay useful when its inputs are unreliable.",
+      "rationale": "The exact final passage implements the accepted instruction using confirmed source material."
+    },
+    {
+      "finding_id": "language-01",
+      "status": "addressed",
+      "quote": "built the replay tool",
+      "rationale": "The exact final passage implements the accepted instruction using confirmed source material."
+    },
+    {
+      "finding_id": "skeptical-01",
+      "status": "addressed",
+      "quote": "Our team tested it with 20 saved messages; we did not measure campus-wide shuttle delays.",
+      "rationale": "The exact final passage implements the accepted instruction using confirmed source material."
+    },
+    {
+      "finding_id": "structure-02",
+      "status": "addressed",
+      "quote": "Northbridge Institute's Distributed Systems Studio is a fit for that question: its work on failure traces and recovery under unreliable inputs connects directly to the problems I encountered.",
+      "rationale": "The exact final passage implements the accepted instruction using confirmed source material."
+    },
+    {
+      "finding_id": "admissions-01",
+      "status": "addressed",
+      "quote": "Northbridge Institute's Distributed Systems Studio is a fit for that question: its work on failure traces and recovery under unreliable inputs connects directly to the problems I encountered.",
+      "rationale": "The exact final passage implements the accepted instruction using confirmed source material."
+    }
+  ],
+  "claim_changes": [
+    {
+      "original_quote": null,
+      "final_quote": "I want to understand how distributed systems recover when their inputs are unreliable.",
+      "source_type": "confirmed_fact",
+      "source_id": "FACT-GOAL",
+      "source_quote": "I want to study recovery in distributed systems and learn to reason about how input assumptions affect a design.",
+      "status": "supported"
+    },
+    {
+      "original_quote": "While building a campus shuttle tracker with three classmates, I wrote the parser that turned inconsistent arrival messages into a single feed. Reviewing those errors made me interested in how software can stay useful when its inputs are unreliable.",
+      "final_quote": "With three classmates, I built a campus shuttle tracker. I wrote the parser that turned inconsistent arrival messages into a single feed and built the replay tool to investigate failures using saved messages. Our team tested it with 20 saved messages; we did not measure campus-wide shuttle delays.",
+      "source_type": "confirmed_fact",
+      "source_id": "FACT-PROJECT",
+      "source_quote": "I wrote the parser and built the replay tool for a campus shuttle tracker with three classmates.",
+      "status": "supported"
+    },
+    {
+      "original_quote": "I built the the replay tool that let us investigate failures using saved messages. Our system eliminated delays for everyone on campus.",
+      "final_quote": "With three classmates, I built a campus shuttle tracker. I wrote the parser that turned inconsistent arrival messages into a single feed and built the replay tool to investigate failures using saved messages. Our team tested it with 20 saved messages; we did not measure campus-wide shuttle delays.",
+      "source_type": "confirmed_fact",
+      "source_id": "FACT-RESULT",
+      "source_quote": "Our team tested with 20 saved messages. We did not measure campus-wide shuttle delays.",
+      "status": "supported"
+    },
+    {
+      "original_quote": "While building a campus shuttle tracker with three classmates, I wrote the parser that turned inconsistent arrival messages into a single feed. Reviewing those errors made me interested in how software can stay useful when its inputs are unreliable.",
+      "final_quote": "Reviewing those errors made me interested in how software can stay useful when its inputs are unreliable. The replay tool let me revisit failures using the messages that caused them. I now want to reason more systematically about recovery.",
+      "source_type": "original",
+      "source_id": "P001",
+      "source_quote": "While building a campus shuttle tracker with three classmates, I wrote the parser that turned inconsistent arrival messages into a single feed. Reviewing those errors made me interested in how software can stay useful when its inputs are unreliable.",
+      "status": "supported"
+    },
+    {
+      "original_quote": "In graduate school, I want to study distributed systems. Your university has outstanding resources that will help me grow.",
+      "final_quote": "Northbridge Institute's Distributed Systems Studio is a fit for that question: its work on failure traces and recovery under unreliable inputs connects directly to the problems I encountered. I want to return to the assumptions we made in that tracker and learn how to test them.",
+      "source_type": "confirmed_fact",
+      "source_id": "FACT-PROGRAM",
+      "source_quote": "Northbridge Institute offers a Distributed Systems Studio. The studio asks students to replay failure traces and reason about recovery under unreliable inputs.",
+      "status": "supported"
+    },
+    {
+      "original_quote": "Our system eliminated delays for everyone on campus.",
+      "final_quote": null,
+      "source_type": "confirmed_fact",
+      "source_id": "ANSWER-skeptical-01",
+      "source_quote": "Our team tested with 20 saved messages. We did not measure campus-wide delays, so remove that outcome claim.",
+      "status": "supported"
+    }
+  ],
+  "unresolved_questions": [],
+  "technical_checks": [
+    {
+      "claim_id": "TECH-dd070290113fe171",
+      "status": "supported_change",
+      "original_quote": "While building a campus shuttle tracker with three classmates, I wrote the parser that turned inconsistent arrival messages into a single feed.",
+      "final_quote": "I wrote the parser that turned inconsistent arrival messages into a single feed and built the replay tool to investigate failures using saved messages.",
+      "source_type": "draft",
+      "source_id": "P001",
+      "source_quote": "While building a campus shuttle tracker with three classmates, I wrote the parser that turned inconsistent arrival messages into a single feed.",
+      "reason": "Synthetic technical check: parser/replay responsibilities and the distributed-systems study goal retain their meaning; project details are separately traced."
+    },
+    {
+      "claim_id": "TECH-9321278cb768dc59",
+      "status": "supported_change",
+      "original_quote": "I built the the replay tool that let us investigate failures using saved messages.",
+      "final_quote": "I wrote the parser that turned inconsistent arrival messages into a single feed and built the replay tool to investigate failures using saved messages.",
+      "source_type": "draft",
+      "source_id": "P002",
+      "source_quote": "I built the the replay tool that let us investigate failures using saved messages.",
+      "reason": "Synthetic technical check: parser/replay responsibilities and the distributed-systems study goal retain their meaning; project details are separately traced."
+    },
+    {
+      "claim_id": "TECH-02b907d573173818",
+      "status": "supported_change",
+      "original_quote": "In graduate school, I want to study distributed systems.",
+      "final_quote": "I want to understand how distributed systems recover when their inputs are unreliable.",
+      "source_type": "draft",
+      "source_id": "P003",
+      "source_quote": "In graduate school, I want to study distributed systems.",
+      "reason": "Synthetic technical check: parser/replay responsibilities and the distributed-systems study goal retain their meaning; project details are separately traced."
+    }
+  ]
+}

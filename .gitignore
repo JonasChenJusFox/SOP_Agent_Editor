@@ -1,5 +1,6 @@
 .env
 .env.*
+!.env.example
 .venv/
 __pycache__/
 *.py[cod]
@@ -9,5 +10,22 @@ dist/
 .coverage
 .pytest_cache/
 private/
+# Repository knowledge, its SQLite index and journals always remain local.
+/private/knowledge/
 runs/
 *.approval.json
+.code-review-graph/
+node_modules/
+.tools/
+.wrangler/
+cloudflare/.dev.vars
+cloudflare/config.local.yml
+cloudflare/.venv/
+cloudflare/.venv-workers/
+cloudflare/python_modules/
+cloudflare/python/admissions_editor/
+cloudflare/python/examples/
+cloudflare/python/settings.json
+cloudflare/.wrangler/
+cloudflare/wrangler.local.jsonc
+src/admissions_editor/web/vendor/

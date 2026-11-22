@@ -1,21 +1,29 @@
 import difflib
+import copy
 import hashlib
 import html
 import json
 import re
+import time
 from concurrent.futures import ThreadPoolExecutor
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Protocol
 
 from jsonschema import Draft202012Validator
 
-from .providers import ROLE_NAMES, ReviewerError, review_schema
+from .providers import ROLE_NAMES, ROLE_FOCUS, REVIEW_RULES, ReviewerError, review_schema
 
 PARAGRAPH_BREAK = re.compile(r"(?:\r?\n)[ \t]*(?:\r?\n)(?:[ \t]*\r?\n)*")
 NUMBERS = re.compile(r"\d+(?:[.,]\d+)*[+%]?")
 FINDING_LIMIT = 12
 CHANGE_LIMIT = 240
-RUN_VERSION = 1
+RUN_VERSION = 2
+PROMPT_VERSION = "review-2"
+RULES_VERSION = "rules-2"
+
+
+def fingerprint(value) -> str:
+    return sha256(json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode())
 
 
 class ReviewerProvider(Protocol):
@@ -60,23 +68,40 @@ def collect_review(
     paragraphs: dict[str, tuple[int, str]],
     evidence: dict[str, str],
 ) -> dict:
+    started = time.monotonic()
+    metadata = {"provider": getattr(provider, "label_for", lambda _: provider.label)(role),
+                "request_sha256": sha256(payload_json.encode()), "prompt_version": PROMPT_VERSION,
+                "instructions_sha256": sha256(getattr(provider, "instructions_for", lambda r: f"{REVIEW_RULES}\nRole: {r}. {ROLE_FOCUS[r]}")(role).encode())}
     try:
         result = provider.review(role, json.loads(payload_json))
+        metadata["metrics"] = getattr(provider, "metrics_for", lambda _: {})(role)
     except ReviewerError as error:
-        return {"status": "failed", "findings": [], "diagnostics": [str(error)]}
-    except (OSError, ValueError, RuntimeError) as error:
+        metadata["elapsed_seconds"] = round(time.monotonic() - started, 6)
+        metadata["metrics"] = getattr(provider, "metrics_for", lambda _: {})(role)
+        return {**metadata, "status": "failed", "findings": [], "diagnostics": [str(error)]}
+    except Exception as error:
         # Provider errors can contain payloads or credentials. The report stores the class only.
-        return {"status": "failed", "findings": [], "diagnostics": [type(error).__name__]}
+        metadata["elapsed_seconds"] = round(time.monotonic() - started, 6)
+        return {**metadata, "status": "failed", "findings": [], "diagnostics": [type(error).__name__]}
+
+    metadata.update({"elapsed_seconds": round(time.monotonic() - started, 6), "output": result})
 
     validator = Draft202012Validator(review_schema())
     if not validator.is_valid(result) or result["role"] != role:
-        return {"status": "failed", "findings": [], "diagnostics": ["Schema or reviewer role mismatch."]}
+        # Invalid output is not persisted: it can contain unexpected private data.
+        metadata.pop("output")
+        return {**metadata, "status": "failed", "findings": [], "diagnostics": ["Schema or reviewer role mismatch."]}
     if len(result["findings"]) > FINDING_LIMIT:
-        return {"status": "failed", "findings": [], "diagnostics": ["Reviewer finding limit exceeded."]}
+        metadata.pop("output")
+        return {**metadata, "status": "failed", "findings": [], "diagnostics": ["Reviewer finding limit exceeded."]}
 
     findings = []
     diagnostics = []
     for index, finding in enumerate(result["findings"], 1):
+        requirement_id = finding.get("requirement_id")
+        if requirement_id is not None and requirement_id not in re.findall(r"\b[A-Z][A-Z0-9_-]{2,63}\b", json.loads(payload_json)["requirements"]):
+            diagnostics.append(f"Finding {index} refers to an unknown requirement ID.")
+            continue
         paragraph = paragraphs.get(finding["paragraph_id"])
         quote = finding["quote"]
         if paragraph is None or not quote.strip():
@@ -103,12 +128,14 @@ def collect_review(
         start = paragraph_start + location
         findings.append({
             **finding,
+            "requirement_id": requirement_id,
             "id": f"{role}-{index:02d}",
             "role": role,
             "start": start,
             "end": start + len(quote),
         })
     return {
+        **metadata,
         "status": "degraded" if diagnostics else "complete",
         "findings": findings,
         "diagnostics": diagnostics,
@@ -121,6 +148,7 @@ def group_findings(findings: list[dict]) -> list[dict]:
         key = (
             finding["start"], finding["end"], finding["category"],
             finding["kind"], finding["action"], finding["replacement"],
+            finding.get("requirement_id"),
         )
         grouped.setdefault(key, []).append(finding)
     return [
@@ -148,7 +176,7 @@ def overlapping_findings(findings: list[dict]) -> list[dict]:
 
 def eligible_changes(
     findings: list[dict], conflicts: list[dict], complete: bool, draft_hash: str,
-    requirements_hash: str,
+    requirements_hash: str, input_hash: str = "",
 ) -> list[dict]:
     if not complete:
         return []
@@ -171,10 +199,14 @@ def eligible_changes(
             or max(len(quote), len(replacement)) > CHANGE_LIMIT
             or any(char in quote + replacement for char in "\n\r\x00")
             or NUMBERS.findall(quote) != NUMBERS.findall(replacement)
+            # Only article/punctuation/spacing edits can be mechanically shown to
+            # preserve content tokens. Other wording remains a reviewable proposal.
+            or [w.lower() for w in re.findall(r"\w+", quote) if w.lower() not in {"a", "an", "the"}]
+               != [w.lower() for w in re.findall(r"\w+", replacement) if w.lower() not in {"a", "an", "the"}]
         ):
             continue
         edit = {key: finding[key] for key in ("start", "end", "quote", "replacement")}
-        payload = json.dumps([draft_hash, requirements_hash, edit], sort_keys=True).encode("utf-8")
+        payload = json.dumps([draft_hash, requirements_hash, input_hash, edit], sort_keys=True).encode("utf-8")
         change_id = f"CHG-{sha256(payload)[:16]}"
         if change_id not in seen:
             changes.append({"id": change_id, "finding_id": finding["id"], **edit})
@@ -206,9 +238,91 @@ def unified_diff(original: str, revised: str) -> str:
     return "".join(line if line.endswith("\n") else line + "\n\\ No newline at end of file\n" for line in diff)
 
 
+def validate_knowledge_context(context):
+    """Validate a frozen retrieval without opening source repositories or SQLite.
+
+    Location metadata records the local retriever's provenance, not an external
+    signature or proof that code establishes a personal contribution.
+    """
+    if context is None:
+        return None
+    try:
+        if context["schema_version"] != "knowledge-context-1" or context["status"] not in {
+                "ready", "partial", "missing", "stale", "disabled", "unavailable"}:
+            raise ValueError("Unsupported repository knowledge context.")
+        if not isinstance(context["snapshot_sha256"], str) or not re.fullmatch(r"[a-f0-9]{64}", context["snapshot_sha256"]):
+            raise ValueError("Repository knowledge context needs a retrieval snapshot hash.")
+        if not isinstance(context["sources"], list) or not isinstance(context["claims"], list) or \
+                not isinstance(context["passages"], list) or not isinstance(context["diagnostics"], list) or \
+                any(not isinstance(item, str) for item in context["diagnostics"]):
+            raise ValueError("Repository knowledge context collections are malformed.")
+        sources = {source["name"]: source for source in context["sources"]}
+        if len(sources) != len(context["sources"]):
+            raise ValueError("Repository knowledge source names must be unique.")
+        claims = {claim["claim_id"]: claim for claim in context["claims"]}
+        if len(claims) != len(context["claims"]):
+            raise ValueError("Repository knowledge claim IDs must be unique.")
+        passages = {}
+        for passage in context["passages"]:
+            key, path = passage["id"], passage["file_path"]
+            if not isinstance(key, str) or not key.startswith("KB-") or passage["evidence_id"] != key or key in passages:
+                raise ValueError("Repository passage IDs must be unique evidence IDs.")
+            if not isinstance(path, str) or not path or PurePosixPath(path).is_absolute() or \
+                    ".." in PurePosixPath(path).parts or "\\" in path or passage["path"] != path:
+                raise ValueError("Repository passage paths must remain relative to their source.")
+            if any(isinstance(passage[field], bool) or not isinstance(passage[field], int) for field in ("line_start", "line_end")) or \
+                    not 1 <= passage["line_start"] <= passage["line_end"]:
+                raise ValueError("Repository passage line ranges are invalid.")
+            if not isinstance(passage["excerpt"], str) or not passage["excerpt"].strip() or "\0" in passage["excerpt"]:
+                raise ValueError("Repository passages need exact nonempty text excerpts.")
+            for field in ("snapshot_hash", "file_sha256"):
+                if not isinstance(passage[field], str) or not re.fullmatch(r"[a-f0-9]{64}", passage[field]):
+                    raise ValueError("Repository passages need content snapshot and file hashes.")
+            commit = passage["commit_sha"]
+            if commit is not None and (not isinstance(commit, str) or not re.fullmatch(r"[a-f0-9]{40,64}", commit)):
+                raise ValueError("Repository commit SHA is malformed.")
+            source = sources.get(passage["repository"])
+            if source is None or source["snapshot_hash"] != passage["snapshot_hash"] or source["commit_sha"] != commit or \
+                    source["status"] in {"missing", "stale", "unavailable", "disabled"}:
+                raise ValueError("Repository passage does not belong to an available frozen source.")
+            if not isinstance(passage["claim_ids"], list) or set(passage["claim_ids"]) - claims.keys():
+                raise ValueError("Repository passage references an unknown essay claim.")
+            passages[key] = passage
+        for key, claim in claims.items():
+            if not isinstance(key, str) or not key or claim["id"] != key or \
+                    not isinstance(claim["text"], str) or not claim["text"].strip() or \
+                    not isinstance(claim["passage_ids"], list) or len(set(claim["passage_ids"])) != len(claim["passage_ids"]) or \
+                    set(claim["passage_ids"]) - passages.keys():
+                raise ValueError("Repository knowledge claim mapping is malformed.")
+            if any(key not in passages[passage_id]["claim_ids"] for passage_id in claim["passage_ids"]):
+                raise ValueError("Repository claim and passage mappings differ.")
+        for key, passage in passages.items():
+            if any(key not in claims[claim_id]["passage_ids"] for claim_id in passage["claim_ids"]):
+                raise ValueError("Repository passage and claim mappings differ.")
+    except (KeyError, TypeError, AttributeError):
+        raise ValueError("Repository knowledge context is malformed.") from None
+    return copy.deepcopy(context)
+
+
+def knowledge_evidence(context):
+    frozen = validate_knowledge_context(context)
+    return {passage["evidence_id"]: passage["excerpt"] for passage in frozen["passages"]} if frozen else {}
+
+
+def merge_knowledge_evidence(evidence, context):
+    merged = dict(evidence)
+    for key, excerpt in knowledge_evidence(context).items():
+        if key in merged and merged[key] != excerpt:
+            raise ValueError("Repository passage ID conflicts with supplied evidence.")
+        merged[key] = excerpt
+    return merged
+
+
 def run_review(
     provider: ReviewerProvider, draft_bytes: bytes, requirements: str,
-    preferences: str, evidence: dict[str, str],
+    preferences: str, evidence: dict[str, str], *, max_workers: int = 4,
+    context: dict | None = None,
+    knowledge_context: dict | None = None,
 ) -> dict:
     draft = draft_bytes.decode("utf-8")
     paragraphs = paragraph_spans(draft)
@@ -217,20 +331,35 @@ def run_review(
     if "\x00" in draft:
         raise ValueError("The draft must be a plain UTF-8 text file.")
 
-    payload_json = json.dumps({
+    knowledge_context = validate_knowledge_context(knowledge_context)
+    evidence = merge_knowledge_evidence(evidence, knowledge_context)
+    snapshot = {
         "draft": draft,
         "paragraphs": [{"id": key, "text": span[1]} for key, span in paragraphs.items()],
         "requirements": requirements,
         "preferences": preferences,
         "evidence": evidence,
-    }, ensure_ascii=False)
+    }
+    if knowledge_context is not None:
+        snapshot["knowledge_context"] = knowledge_context
+    payload_json = json.dumps(snapshot, ensure_ascii=False)
+    context = {**(context or {}), "review_configuration": {
+        role: getattr(provider, "label_for", lambda _: provider.label)(role) for role in ROLE_NAMES}}
+    input_hash = fingerprint({"snapshot": snapshot, "context": context,
+                              "prompt_version": PROMPT_VERSION, "rules_version": RULES_VERSION})
 
-    with ThreadPoolExecutor(max_workers=len(ROLE_NAMES)) as pool:
-        jobs = {
-            role: pool.submit(collect_review, provider, role, payload_json, paragraphs, evidence)
-            for role in ROLE_NAMES
-        }
-        reviewers = {role: job.result() for role, job in jobs.items()}
+    if not 1 <= max_workers <= 4:
+        raise ValueError("max_workers must be between 1 and 4.")
+    if max_workers == 1:
+        # Also supports WebAssembly runtimes without operating-system threads.
+        reviewers = {role: collect_review(provider, role, payload_json, paragraphs, evidence) for role in ROLE_NAMES}
+    else:
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            jobs = {
+                role: pool.submit(collect_review, provider, role, payload_json, paragraphs, evidence)
+                for role in ROLE_NAMES
+            }
+            reviewers = {role: job.result() for role, job in jobs.items()}
 
     complete = all(result["status"] == "complete" for result in reviewers.values())
     findings = [finding for result in reviewers.values() for finding in result["findings"]]
@@ -239,6 +368,12 @@ def run_review(
     requirements_hash = sha256(requirements.encode("utf-8"))
     return {
         "schema_version": RUN_VERSION,
+        "prompt_version": PROMPT_VERSION,
+        "rules_version": RULES_VERSION,
+        "snapshot": snapshot,
+        "context": context,
+        "input_sha256": input_hash,
+        "run_id": "RUN-" + input_hash[:20],
         "status": "complete" if complete else "partial",
         "provider": provider.label,
         "draft_sha256": draft_hash,
@@ -250,7 +385,7 @@ def run_review(
         "reviewers": reviewers,
         "groups": group_findings(findings),
         "conflicts": conflicts,
-        "changes": eligible_changes(findings, conflicts, complete, draft_hash, requirements_hash),
+        "changes": eligible_changes(findings, conflicts, complete, draft_hash, requirements_hash, input_hash),
         "diagnostics": [
             f"{role}: {item}" for role, result in reviewers.items() for item in result["diagnostics"]
         ],
@@ -259,6 +394,31 @@ def run_review(
 
 def markdown_text(value: str) -> str:
     return re.sub(r"([\\`*_{}\[\]()!#|~])", r"\\\1", html.escape(" ".join(value.split()), quote=False))
+
+
+def render_knowledge(context):
+    frozen = validate_knowledge_context(context)
+    if frozen is None:
+        return ""
+    lines = ["", "## Repository knowledge", "", f"- Retrieval status: **{markdown_text(frozen['status'])}**",
+             "- Retrieved code, documentation, tests and evaluations are context, not proof of authorship, deployment, measured results or personal ownership."]
+    for source in frozen["sources"]:
+        version = source.get("commit_sha") or source.get("snapshot_hash") or "no available snapshot"
+        lines.append(f"- {markdown_text(source['name'])}: {markdown_text(source['status'])}; version {markdown_text(version)}")
+    lines.extend("- " + markdown_text(item) for item in frozen["diagnostics"])
+    passages = {item["id"]: item for item in frozen["passages"]}
+    for claim in frozen["claims"]:
+        lines.extend(["", f"### {markdown_text(claim['claim_id'])}", "", "> " + markdown_text(claim["text"]), ""])
+        if not claim["passage_ids"]:
+            lines.append("No relevant repository passage retrieved; this is not evidence that the claim is false.")
+        for passage_id in claim["passage_ids"]:
+            passage = passages[passage_id]
+            location = f"{passage['repository']}/{passage['file_path']}:L{passage['line_start']}-L{passage['line_end']}"
+            lines.extend([f"- {markdown_text(passage_id)} · {markdown_text(location)}",
+                          f"  - Commit: {markdown_text(passage['commit_sha'] or 'not a Git snapshot')}; snapshot: {markdown_text(passage['snapshot_hash'])}", ""])
+            lines.extend("> " + markdown_text(line) for line in passage["excerpt"].splitlines())
+            lines.append("")
+    return "\n".join(lines) + "\n"
 
 
 def render_report(run: dict) -> str:
@@ -324,4 +484,4 @@ def render_report(run: dict) -> str:
         ])
     if not run["changes"]:
         lines.append("None available.")
-    return "\n".join(lines) + "\n"
+    return "\n".join(lines) + "\n" + render_knowledge(run["snapshot"].get("knowledge_context"))

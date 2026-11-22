@@ -1,0 +1,739 @@
+{
+  "version": "predictions-1",
+  "dataset_sha256": "59f158439c99b7b7c9a27e1b659767a39ea2915901f861de93c6e5469a46237b",
+  "runs": [
+    {
+      "case_id": "SYN-01-issue",
+      "document_sha256": "d6c0e713ecdbfd6064a75f5f07194dcab1f38b62bc0e1aa90b955067b1114d8b",
+      "reviewer_model": "A",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-01-issue",
+      "document_sha256": "d6c0e713ecdbfd6064a75f5f07194dcab1f38b62bc0e1aa90b955067b1114d8b",
+      "reviewer_model": "B",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [
+        {
+          "unit_id": "target",
+          "category": "evidence",
+          "severity": "high",
+          "rationale_valid": true,
+          "confidence": 0.8
+        }
+      ],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-01-clean",
+      "document_sha256": "6275187ac1b5f86dfb02a5cc7c31259bb48b75d3caa201c9aaaf3f5003018f7d",
+      "reviewer_model": "A",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-01-clean",
+      "document_sha256": "6275187ac1b5f86dfb02a5cc7c31259bb48b75d3caa201c9aaaf3f5003018f7d",
+      "reviewer_model": "B",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [
+        {
+          "unit_id": "voice",
+          "category": "language",
+          "severity": "low",
+          "rationale_valid": false,
+          "confidence": 0.6
+        }
+      ],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-02-issue",
+      "document_sha256": "146df5b5849389109005f7ff53758f563cede4d281e3af1d44231339453d5051",
+      "reviewer_model": "A",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-02-issue",
+      "document_sha256": "146df5b5849389109005f7ff53758f563cede4d281e3af1d44231339453d5051",
+      "reviewer_model": "B",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [
+        {
+          "unit_id": "target",
+          "category": "evidence",
+          "severity": "high",
+          "rationale_valid": true,
+          "confidence": 0.8
+        }
+      ],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-02-clean",
+      "document_sha256": "930e337311f173090ee23d7ab2972bda2613a666b8b3fc130b49487a15be4496",
+      "reviewer_model": "A",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-02-clean",
+      "document_sha256": "930e337311f173090ee23d7ab2972bda2613a666b8b3fc130b49487a15be4496",
+      "reviewer_model": "B",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-03-issue",
+      "document_sha256": "b37b5447fb5dc423bca6bb500cf0588df596fda5ccc4b229fb879e69526fecc4",
+      "reviewer_model": "A",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [
+        {
+          "unit_id": "target",
+          "category": "admissions",
+          "severity": "high",
+          "rationale_valid": true,
+          "confidence": 0.8
+        }
+      ],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-03-issue",
+      "document_sha256": "b37b5447fb5dc423bca6bb500cf0588df596fda5ccc4b229fb879e69526fecc4",
+      "reviewer_model": "B",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [
+        {
+          "unit_id": "target",
+          "category": "admissions",
+          "severity": "high",
+          "rationale_valid": true,
+          "confidence": 0.8
+        }
+      ],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-03-clean",
+      "document_sha256": "6e811aacadada6230d635956c043f6e15dfd1806a0de79b77687cb4d4722ab7d",
+      "reviewer_model": "A",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-03-clean",
+      "document_sha256": "6e811aacadada6230d635956c043f6e15dfd1806a0de79b77687cb4d4722ab7d",
+      "reviewer_model": "B",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-04-issue",
+      "document_sha256": "611c19b592ce2af5ee1801cbd2b4d52efd3489d433b4bf16460dc73391659ee8",
+      "reviewer_model": "A",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [
+        {
+          "unit_id": "target",
+          "category": "language",
+          "severity": "low",
+          "rationale_valid": true,
+          "confidence": 0.8
+        }
+      ],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-04-issue",
+      "document_sha256": "611c19b592ce2af5ee1801cbd2b4d52efd3489d433b4bf16460dc73391659ee8",
+      "reviewer_model": "B",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [
+        {
+          "unit_id": "target",
+          "category": "language",
+          "severity": "low",
+          "rationale_valid": true,
+          "confidence": 0.8
+        }
+      ],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-04-clean",
+      "document_sha256": "772320e5f80c048c57bc6e5d33361ca0e1fd42aaca912900173f682ab05c0ab0",
+      "reviewer_model": "A",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-04-clean",
+      "document_sha256": "772320e5f80c048c57bc6e5d33361ca0e1fd42aaca912900173f682ab05c0ab0",
+      "reviewer_model": "B",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-05-issue",
+      "document_sha256": "a48142d675a74fd5ea413d01942460c2b75abf82cefea043dbc7bae266346f41",
+      "reviewer_model": "A",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [
+        {
+          "unit_id": "target",
+          "category": "evidence",
+          "severity": "high",
+          "rationale_valid": true,
+          "confidence": 0.8
+        }
+      ],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-05-issue",
+      "document_sha256": "a48142d675a74fd5ea413d01942460c2b75abf82cefea043dbc7bae266346f41",
+      "reviewer_model": "B",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-05-clean",
+      "document_sha256": "ffc35206a056bfcf76857d47b119af47b0b80126d13d96eb9e20a87d9f5c713c",
+      "reviewer_model": "A",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-05-clean",
+      "document_sha256": "ffc35206a056bfcf76857d47b119af47b0b80126d13d96eb9e20a87d9f5c713c",
+      "reviewer_model": "B",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-06-issue",
+      "document_sha256": "2ca5cef2a2150d91e19acad83b3de3e20be63540854fe52ce18749d49874a2d7",
+      "reviewer_model": "A",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [
+        {
+          "unit_id": "target",
+          "category": "evidence",
+          "severity": "high",
+          "rationale_valid": true,
+          "confidence": 0.8
+        }
+      ],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-06-issue",
+      "document_sha256": "2ca5cef2a2150d91e19acad83b3de3e20be63540854fe52ce18749d49874a2d7",
+      "reviewer_model": "B",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-06-clean",
+      "document_sha256": "14789981f37cab612de6c91322bd6b6b2ed5a70f2eb1e3be1911a5d8313af0be",
+      "reviewer_model": "A",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-06-clean",
+      "document_sha256": "14789981f37cab612de6c91322bd6b6b2ed5a70f2eb1e3be1911a5d8313af0be",
+      "reviewer_model": "B",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-07-issue",
+      "document_sha256": "ce114f3b89009df5a8e3722bcdc161321df14d88c2f836dfa4af22967cf5f68e",
+      "reviewer_model": "A",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [
+        {
+          "unit_id": "target",
+          "category": "admissions",
+          "severity": "high",
+          "rationale_valid": true,
+          "confidence": 0.8
+        }
+      ],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-07-issue",
+      "document_sha256": "ce114f3b89009df5a8e3722bcdc161321df14d88c2f836dfa4af22967cf5f68e",
+      "reviewer_model": "B",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [
+        {
+          "unit_id": "target",
+          "category": "admissions",
+          "severity": "high",
+          "rationale_valid": true,
+          "confidence": 0.8
+        }
+      ],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-07-clean",
+      "document_sha256": "a2196b21a18fa9a5f6b9ec1e05594d318ea5d0fdff724c3a8e89b3eeb2bbce48",
+      "reviewer_model": "A",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-07-clean",
+      "document_sha256": "a2196b21a18fa9a5f6b9ec1e05594d318ea5d0fdff724c3a8e89b3eeb2bbce48",
+      "reviewer_model": "B",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-08-issue",
+      "document_sha256": "041f3356ee79eaad676723c1209a079dab05f74228549b0fd76df1ca76e44272",
+      "reviewer_model": "A",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "failed",
+      "assessed_unit_ids": [],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 0
+    },
+    {
+      "case_id": "SYN-08-issue",
+      "document_sha256": "041f3356ee79eaad676723c1209a079dab05f74228549b0fd76df1ca76e44272",
+      "reviewer_model": "B",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [
+        {
+          "unit_id": "target",
+          "category": "language",
+          "severity": "low",
+          "rationale_valid": true,
+          "confidence": 0.8
+        }
+      ],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-08-clean",
+      "document_sha256": "86ac095bdcbae4ba8945172a0c4d28decddb14c125dc2c4474db060dd2c2a9d0",
+      "reviewer_model": "A",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    },
+    {
+      "case_id": "SYN-08-clean",
+      "document_sha256": "86ac095bdcbae4ba8945172a0c4d28decddb14c125dc2c4474db060dd2c2a9d0",
+      "reviewer_model": "B",
+      "role": "report",
+      "arm": "four",
+      "source": "synthetic_fixture",
+      "status": "complete",
+      "assessed_unit_ids": [
+        "target",
+        "voice"
+      ],
+      "findings": [],
+      "call_count": 4,
+      "latency_seconds": 0,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "expected_roles": 4,
+      "successful_roles": 4
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+I want to understand how distributed systems recover when their inputs are unreliable.
+
+With three classmates, I built a campus shuttle tracker. I wrote the parser that turned inconsistent arrival messages into a single feed and built the replay tool to investigate failures using saved messages. Our team tested it with 20 saved messages; we did not measure campus-wide shuttle delays.
+
+Reviewing those errors made me interested in how software can stay useful when its inputs are unreliable. The replay tool let me revisit failures using the messages that caused them. I now want to reason more systematically about recovery.
+
+Northbridge Institute's Distributed Systems Studio is a fit for that question: its work on failure traces and recovery under unreliable inputs connects directly to the problems I encountered. I want to return to the assumptions we made in that tracker and learn how to test them.

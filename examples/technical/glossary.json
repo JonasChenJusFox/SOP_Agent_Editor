@@ -1,0 +1,7 @@
+[
+  {
+    "term": "ShardProbe",
+    "definition": "Project-specific name for a tool that replays saved parser inputs; this definition does not establish who built it or any measured outcome.",
+    "aliases": ["SP"]
+  }
+]

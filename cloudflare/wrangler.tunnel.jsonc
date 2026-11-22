@@ -1,0 +1,9 @@
+{
+  "$schema": "../node_modules/wrangler/config-schema.json",
+  "name": "admissions-editor-agent",
+  "main": "worker.js",
+  "compatibility_date": "2026-11-18",
+  "workers_dev": true,
+  "assets": {"directory": "../src/admissions_editor/web", "binding": "ASSETS", "run_worker_first": true},
+  "observability": {"enabled": false}
+}

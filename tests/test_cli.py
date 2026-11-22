@@ -155,6 +155,46 @@ class EditorialCliTest(unittest.TestCase):
         self.assertFalse(state["changes"])
         self.assertNotIn(fabricated_quote, (run / "proposed.diff").read_text(encoding="utf-8"))
 
+    def test_unknown_evidence_id_and_extra_schema_field_disable_approval(self):
+        self.write_fixture("language", [{**self.language_finding, "evidence_ids": ["unknown.txt"]}])
+        _, state = self.review(expected_exit=2)
+        self.assertFalse(state["changes"])
+        self.write_fixture("language", [{**self.language_finding, "unexpected": "field"}])
+        _, state = self.review(directory="schema-failure", expected_exit=2)
+        self.assertEqual(state["reviewers"]["language"]["status"], "failed")
+        self.write_fixture("language", [{**self.language_finding, "requirement_id": "MADE_UP_REQUIREMENT"}])
+        _, state = self.review(directory="unknown-requirement", expected_exit=2)
+        self.assertEqual(state["reviewers"]["language"]["status"], "degraded")
+
+    def test_numeric_or_content_changing_replacement_is_visible_but_cannot_be_approved(self):
+        for index, replacement in enumerate(("the prototype for 100 users", "the entire ranking engine")):
+            self.write_fixture("language", [{**self.language_finding, "replacement": replacement}])
+            run, state = self.review(directory=f"unsafe-{index}")
+            self.assertFalse(state["changes"])
+            details = json.loads((run / "candidate-details.json").read_text())["items"]
+            self.assertEqual(len(details), 1)
+            self.assertFalse(details[0]["eligible"])
+            self.assertTrue((run / "changes/language-01.diff").exists())
+
+    def test_duplicate_selection_and_reusing_output_are_rejected(self):
+        run, state = self.review()
+        change = state["changes"][0]["id"]
+        result = self.cli("approve", "--run", run, "--draft", self.draft,
+                          "--change", change, "--change", change, "--out", self.output)
+        self.assert_approval_failed(result)
+        self.assertEqual(self.approve(run, change).returncode, 0)
+        original = self.output.read_bytes()
+        self.assertNotEqual(self.approve(run, change).returncode, 0)
+        self.assertEqual(self.output.read_bytes(), original)
+
+    def test_approval_cannot_overwrite_original_or_apply_unknown_id(self):
+        run, state = self.review()
+        result = self.cli("approve", "--run", run, "--draft", self.draft,
+                          "--change", state["changes"][0]["id"], "--out", self.draft)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(self.draft.read_bytes(), DRAFT.encode())
+        self.assert_approval_failed(self.approve(run, "CHG-unavailable"))
+
 
 if __name__ == "__main__":
     unittest.main()

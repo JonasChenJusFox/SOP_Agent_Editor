@@ -1,0 +1,144 @@
+{
+  "input_source": "synthetic",
+  "cases": [
+    {
+      "id": "safe-ml-style-edit",
+      "draft": "I used embeddings for retrieval with FAISS and built the search interface. My teammates fine-tuned BERT for ranking. We measured MRR 0.42 and NDCG 0.68 on the validation set.",
+      "evidence": {
+        "notes.txt": "The applicant built the search interface and used FAISS embeddings for retrieval. The research team fine-tuned BERT for ranking. MRR was 0.42 and NDCG was 0.68 on validation data."
+      },
+      "candidate": "Using FAISS embeddings for retrieval, I built the search interface. My teammates fine-tuned BERT for ranking. On validation data, we measured MRR 0.42 and NDCG 0.68.",
+      "expected_pass": true,
+      "expected_issue_kinds": [],
+      "glossary": []
+    },
+    {
+      "id": "retrieval-is-not-ranking",
+      "draft": "I implemented retrieval with FAISS embeddings. The ranking component belonged to my teammates.",
+      "candidate": "I implemented ranking with FAISS embeddings. The retrieval component belonged to my teammates.",
+      "expected_pass": false,
+      "expected_issue_kinds": [
+        "contribution_drift"
+      ],
+      "evidence": {},
+      "glossary": []
+    },
+    {
+      "id": "embeddings-is-not-fine-tuning",
+      "draft": "I used embeddings for retrieval. My teammates fine-tuned BERT.",
+      "candidate": "I fine-tuned BERT for retrieval. My teammates used embeddings.",
+      "expected_pass": false,
+      "expected_issue_kinds": [
+        "contribution_drift"
+      ],
+      "evidence": {},
+      "glossary": []
+    },
+    {
+      "id": "interface-is-not-model-development",
+      "draft": "I built the interface for the underlying model.",
+      "evidence": {
+        "notes.txt": "The research team trained the underlying model. The applicant built only the interface."
+      },
+      "candidate": "I developed the underlying model.",
+      "expected_pass": false,
+      "expected_issue_kinds": [
+        "contribution_drift"
+      ],
+      "glossary": []
+    },
+    {
+      "id": "metric-association-swap",
+      "draft": "We measured MRR 0.42 and NDCG 0.68 on validation data.",
+      "candidate": "We measured MRR 0.68 and NDCG 0.42 on validation data.",
+      "expected_pass": false,
+      "expected_issue_kinds": [
+        "metric_drift"
+      ],
+      "evidence": {},
+      "glossary": []
+    },
+    {
+      "id": "validation-is-not-test",
+      "draft": "We measured accuracy on the validation set.",
+      "candidate": "We measured accuracy on the held-out test set.",
+      "expected_pass": false,
+      "expected_issue_kinds": [
+        "altered"
+      ],
+      "evidence": {},
+      "glossary": []
+    },
+    {
+      "id": "project-glossary-alias",
+      "draft": "I wrote SP to replay parser failures.",
+      "glossary": [
+        {
+          "term": "ShardProbe",
+          "definition": "Our local name for the replay tool.",
+          "aliases": [
+            "SP"
+          ]
+        }
+      ],
+      "candidate": "I wrote ShardProbe to replay parser failures.",
+      "expected_pass": true,
+      "expected_issue_kinds": [],
+      "evidence": {}
+    },
+    {
+      "id": "glossary-is-not-factual-evidence",
+      "draft": "I built a parser.",
+      "glossary": [
+        {
+          "term": "HyperRank",
+          "definition": "A project-specific ranking component."
+        }
+      ],
+      "candidate": "I built HyperRank and a parser.",
+      "expected_pass": false,
+      "expected_issue_kinds": [
+        "unsupported_term"
+      ],
+      "evidence": {}
+    },
+    {
+      "id": "specialized-library-is-not-ai-prose",
+      "draft": "I integrated the library AuroraKit into the interface.",
+      "candidate": "I integrated library AuroraKit into the user interface.",
+      "expected_pass": true,
+      "expected_issue_kinds": [],
+      "evidence": {},
+      "glossary": []
+    },
+    {
+      "id": "safe-negated-contribution",
+      "draft": "I built an interface and did not train the underlying model.",
+      "evidence": {},
+      "glossary": [],
+      "candidate": "I built the user interface and did not train the underlying model.",
+      "expected_pass": true,
+      "expected_issue_kinds": []
+    },
+    {
+      "id": "safe-distinct-methods",
+      "draft": "I used embeddings for retrieval; the team fine-tuned the ranking model.",
+      "evidence": {},
+      "glossary": [],
+      "candidate": "For retrieval, I used embeddings; the team fine-tuned the ranking model.",
+      "expected_pass": true,
+      "expected_issue_kinds": []
+    },
+    {
+      "id": "library-substitution",
+      "draft": "I implemented the parser using PyTorch.",
+      "evidence": {},
+      "glossary": [],
+      "candidate": "I implemented the parser using TensorFlow.",
+      "expected_pass": false,
+      "expected_issue_kinds": [
+        "unsupported_term"
+      ]
+    }
+  ]
+}

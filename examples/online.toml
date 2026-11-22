@@ -1,0 +1,42 @@
+# Copy to private/models.toml. Paths are relative to this file.
+# Model IDs can be exact pinned versions available to your API project.
+# No model field means use OPENAI_MODEL from the shell.
+[review]
+provider = "openai"
+timeout = 90
+retries = 1
+max_workers = 4
+
+# To route a role independently, uncomment and set a model available to you:
+# [roles.skeptical]
+# model = "REPLACE_WITH_AVAILABLE_MODEL_ID"
+
+[workflow]
+provider = "openai"
+timeout = 90
+retries = 1
+
+[writer]
+provider = "openai"
+timeout = 90
+retries = 1
+
+# Full-essay revision: SOP Reviser -> polish -> Humanizer -> read-only verifier.
+# All four use OPENAI_MODEL unless the section explicitly sets model.
+[revision]
+provider = "openai"
+timeout = 180
+retries = 1
+
+# Optional per-stage overrides; available model IDs come from your API project.
+# [reviser]
+# model = "REPLACE_WITH_AVAILABLE_MODEL_ID"
+# [polisher]
+# model = "REPLACE_WITH_AVAILABLE_MODEL_ID"
+# [humanizer]
+# model = "REPLACE_WITH_AVAILABLE_MODEL_ID"
+# [revision_verifier]
+# model = "REPLACE_WITH_AVAILABLE_MODEL_ID"
+
+[rounds]
+max_rounds = 3

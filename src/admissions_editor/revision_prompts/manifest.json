@@ -1,0 +1,246 @@
+{
+  "schema_version": 1,
+  "audit_date": "2026-11-19",
+  "common_sha256": "da48a67ec0174d5a311156e7ab60c9a7e028d491006100c319075d9e7d080e1e",
+  "sources": {
+    "sop-consultant": {
+      "repository": "Haadhi76/SOP_Consultant",
+      "commit": "5522a872b44272738160b9415487421641807ced",
+      "url": "https://github.com/Haadhi76/SOP_Consultant/blob/5522a872b44272738160b9415487421641807ced/skills/statement-of-purpose/SKILL.md",
+      "path": "skills/statement-of-purpose/SKILL.md",
+      "sha256": "038501aa4983ab4e90aba9689c2a5a2e0ff7df4b35340945651c663d2ccbd9f3",
+      "license": "MIT",
+      "license_notices": [
+        "licenses/sop-consultant-MIT.txt"
+      ],
+      "inspected_references": [
+        {
+          "path": "skills/statement-of-purpose/references/fluency-advanced-l2.md",
+          "sha256": "9c60f445902742a28af92ece986e459fad9dc929521c665d70c73b38ba64f31b",
+          "bytes": 2607,
+          "url": "https://github.com/Haadhi76/SOP_Consultant/blob/5522a872b44272738160b9415487421641807ced/skills/statement-of-purpose/references/fluency-advanced-l2.md"
+        },
+        {
+          "path": "skills/statement-of-purpose/references/fluency-developing-l2.md",
+          "sha256": "0c91c2b1f02131e918470aee505b24aec89037737ffd79bc1b5f9dae7e788608",
+          "bytes": 3746,
+          "url": "https://github.com/Haadhi76/SOP_Consultant/blob/5522a872b44272738160b9415487421641807ced/skills/statement-of-purpose/references/fluency-developing-l2.md"
+        },
+        {
+          "path": "skills/statement-of-purpose/references/fluency-fluent-or-native.md",
+          "sha256": "b62a4358032aaf89ecd06c43603f495007b977334ca8a2195e444feea59970f5",
+          "bytes": 1770,
+          "url": "https://github.com/Haadhi76/SOP_Consultant/blob/5522a872b44272738160b9415487421641807ced/skills/statement-of-purpose/references/fluency-fluent-or-native.md"
+        },
+        {
+          "path": "skills/statement-of-purpose/references/move-framework.md",
+          "sha256": "40e3eec6f5bbd5ae1236fb62373f13518c46cc07cefed52fac43b821aaa1cfae",
+          "bytes": 8557,
+          "url": "https://github.com/Haadhi76/SOP_Consultant/blob/5522a872b44272738160b9415487421641807ced/skills/statement-of-purpose/references/move-framework.md"
+        },
+        {
+          "path": "skills/statement-of-purpose/references/revision-checklist.md",
+          "sha256": "7eddf547d20d64b5c901d4ee0b05886be3d46d4a85b8c2b72ee169b27d1b229f",
+          "bytes": 3581,
+          "url": "https://github.com/Haadhi76/SOP_Consultant/blob/5522a872b44272738160b9415487421641807ced/skills/statement-of-purpose/references/revision-checklist.md"
+        },
+        {
+          "path": "skills/statement-of-purpose/references/style-and-voice.md",
+          "sha256": "444464d402551cc83991cdf00ff0c791336402981b3c05b580392da23096c7a9",
+          "bytes": 5741,
+          "url": "https://github.com/Haadhi76/SOP_Consultant/blob/5522a872b44272738160b9415487421641807ced/skills/statement-of-purpose/references/style-and-voice.md"
+        },
+        {
+          "path": "skills/statement-of-purpose/references/use-case-career-change.md",
+          "sha256": "c2d36c1d4620c299956625d5e895b336206d99c4d964cc1fed8fa4f9eb1d5340",
+          "bytes": 3648,
+          "url": "https://github.com/Haadhi76/SOP_Consultant/blob/5522a872b44272738160b9415487421641807ced/skills/statement-of-purpose/references/use-case-career-change.md"
+        },
+        {
+          "path": "skills/statement-of-purpose/references/use-case-fellowship-scholarship.md",
+          "sha256": "91512532b0278e722a7cc906e14df7e4deeec5371b2fca80ac2f7ad9b77499ee",
+          "bytes": 3765,
+          "url": "https://github.com/Haadhi76/SOP_Consultant/blob/5522a872b44272738160b9415487421641807ced/skills/statement-of-purpose/references/use-case-fellowship-scholarship.md"
+        },
+        {
+          "path": "skills/statement-of-purpose/references/use-case-mba.md",
+          "sha256": "62c2a74359554cd07cfc47dc3c7339c174a69e8c5e1c7b15b98258c032fab35d",
+          "bytes": 8110,
+          "url": "https://github.com/Haadhi76/SOP_Consultant/blob/5522a872b44272738160b9415487421641807ced/skills/statement-of-purpose/references/use-case-mba.md"
+        },
+        {
+          "path": "skills/statement-of-purpose/references/use-case-mfa.md",
+          "sha256": "81200c36e985a38da82f717f459624f283eaad973ddb380c46252e68830ff0b0",
+          "bytes": 4835,
+          "url": "https://github.com/Haadhi76/SOP_Consultant/blob/5522a872b44272738160b9415487421641807ced/skills/statement-of-purpose/references/use-case-mfa.md"
+        },
+        {
+          "path": "skills/statement-of-purpose/references/use-case-research-phd.md",
+          "sha256": "eff4240b39544bc01517c29b3bd2b924baace39f4befe29715d31eddf7f36f5c",
+          "bytes": 4315,
+          "url": "https://github.com/Haadhi76/SOP_Consultant/blob/5522a872b44272738160b9415487421641807ced/skills/statement-of-purpose/references/use-case-research-phd.md"
+        },
+        {
+          "path": "skills/statement-of-purpose/references/use-case-taught-masters.md",
+          "sha256": "d11c0890cb447780cc277ebb63d3afca113d748020912196d30fb8ee94e39228",
+          "bytes": 2901,
+          "url": "https://github.com/Haadhi76/SOP_Consultant/blob/5522a872b44272738160b9415487421641807ced/skills/statement-of-purpose/references/use-case-taught-masters.md"
+        }
+      ]
+    },
+    "general-writing": {
+      "repository": "msimchowitz/writing-skills",
+      "commit": "214981fe02326f27b0fc8790d00eb4b731607073",
+      "url": "https://github.com/msimchowitz/writing-skills/blob/214981fe02326f27b0fc8790d00eb4b731607073/for-agents/general-writing/SKILL.md",
+      "path": "for-agents/general-writing/SKILL.md",
+      "sha256": "78ed812a03f8ebf4a3de4bf7d999bbd846aafc21263df1fc4348c6617b9e131f",
+      "license": "MIT",
+      "license_notices": [
+        "licenses/writing-skills-MIT.txt",
+        "licenses/general-writing-MIT.txt"
+      ],
+      "inspected_references": [
+        {
+          "path": "for-agents/general-writing/references/eval.md",
+          "sha256": "cf0deb331f3906c68519b5ba892f591f937352694c88d39721dcc6f218581022",
+          "bytes": 5952,
+          "url": "https://github.com/msimchowitz/writing-skills/blob/214981fe02326f27b0fc8790d00eb4b731607073/for-agents/general-writing/references/eval.md"
+        }
+      ]
+    },
+    "humanizer": {
+      "repository": "msimchowitz/writing-skills",
+      "commit": "214981fe02326f27b0fc8790d00eb4b731607073",
+      "url": "https://github.com/msimchowitz/writing-skills/blob/214981fe02326f27b0fc8790d00eb4b731607073/for-agents/humanizer/SKILL.md",
+      "path": "for-agents/humanizer/SKILL.md",
+      "sha256": "e1f4dd89ccb7e381cfc162ac07a71a8cf635a44338fc864bf4cbef20d499421c",
+      "license": "MIT",
+      "license_notices": [
+        "licenses/writing-skills-MIT.txt",
+        "licenses/humanizer-MIT.txt"
+      ],
+      "inspected_references": [
+        {
+          "path": "for-agents/better-usage/SKILL.md",
+          "sha256": "236d2a1c1012fa67a2fad3cd1af30d30a71939f5d3e51de21c269d565960170e",
+          "bytes": 4141,
+          "url": "https://github.com/msimchowitz/writing-skills/blob/214981fe02326f27b0fc8790d00eb4b731607073/for-agents/better-usage/SKILL.md"
+        },
+        {
+          "path": "for-agents/better-usage/references/compatibility-examples.md",
+          "sha256": "0b39d935f043fd126053425de63fd492b3c5154795ae01aeb857829274239a08",
+          "bytes": 7399,
+          "url": "https://github.com/msimchowitz/writing-skills/blob/214981fe02326f27b0fc8790d00eb4b731607073/for-agents/better-usage/references/compatibility-examples.md"
+        },
+        {
+          "path": "for-agents/academic-voice/SKILL.md",
+          "sha256": "8696023f2d243a620122716fbefc394d2aae17dffd7c77c17983e24960eac82c",
+          "bytes": 4541,
+          "url": "https://github.com/msimchowitz/writing-skills/blob/214981fe02326f27b0fc8790d00eb4b731607073/for-agents/academic-voice/SKILL.md"
+        },
+        {
+          "path": "for-agents/writing-cadence/SKILL.md",
+          "sha256": "f6fcebf01935741e8cba7299eeaac4b8727af8eaa4120c7d1ae148cb15284bb6",
+          "bytes": 5736,
+          "url": "https://github.com/msimchowitz/writing-skills/blob/214981fe02326f27b0fc8790d00eb4b731607073/for-agents/writing-cadence/SKILL.md"
+        },
+        {
+          "path": "for-agents/writing-cadence/references/cadence-principles.md",
+          "sha256": "9ba532fc32e0b7090e7c4d1458cc05064f7befaddf24b962106496b0df374fe1",
+          "bytes": 4779,
+          "url": "https://github.com/msimchowitz/writing-skills/blob/214981fe02326f27b0fc8790d00eb4b731607073/for-agents/writing-cadence/references/cadence-principles.md"
+        },
+        {
+          "path": "for-agents/non-autoregressive-writing-pass/SKILL.md",
+          "sha256": "297012f7f9f96026022e1d14d3234b577c22ead3f6b9f1722a30eb24b2567139",
+          "bytes": 6022,
+          "url": "https://github.com/msimchowitz/writing-skills/blob/214981fe02326f27b0fc8790d00eb4b731607073/for-agents/non-autoregressive-writing-pass/SKILL.md"
+        }
+      ]
+    }
+  },
+  "adaptations": [
+    "User-required order is SOP revision, restrained language polish, Humanizer as the last writing pass, then read-only verification. Upstream general-writing instead recommends Humanizer before house-style passes.",
+    "The actual application prompt, genre and stated limit replace upstream default lengths, fluency-profile intake and fixed narrative assumptions.",
+    "No opinions, feelings, anecdotes, motivation, results, program details or applicant facts are added to manufacture personality. Missing information stays unresolved.",
+    "Upstream diagnostic patterns are contextual editing guidance, never AI-detector scoring or an evasion objective. No detector percentages are produced.",
+    "These are concise application-specific adaptations, not unmodified upstream skills. No upstream tools, subskills or recursive editing pipelines are executed.",
+    "Technical context and an optional project glossary guide all writing stages. Specialized terminology is not an AI-writing defect; unresolved technical edits retain original wording and are flagged. The final existing read-only verifier audits technical meaning against original and supplied evidence, without additional skills or services.",
+    "Repository-local knowledge is retrieved per essay claim with frozen file/line/version provenance. Code and evaluation artifacts do not automatically establish applicant authorship, production deployment or measured impact.",
+    "Technical context includes exact author-confirmed fact and answer sources as declarations, while unconfirmed text, voice samples, glossary definitions and decision reasons remain outside factual authority. Application terminology can establish contextual degree spelling, not personal credentials or technical achievements."
+  ],
+  "license_notices": [
+    {
+      "file": "licenses/sop-consultant-MIT.txt",
+      "sha256": "baa7997e6c32ffa738000c3798a94a5aa3a05033bfee3d07ee0490aefefc7346",
+      "repository": "Haadhi76/SOP_Consultant",
+      "commit": "5522a872b44272738160b9415487421641807ced",
+      "upstream_path": "LICENSE"
+    },
+    {
+      "file": "licenses/writing-skills-MIT.txt",
+      "sha256": "440dcfb890f65fd7ece3aad27a00432742fce7f92603c2f43997d7a6fdd75078",
+      "repository": "msimchowitz/writing-skills",
+      "commit": "214981fe02326f27b0fc8790d00eb4b731607073",
+      "upstream_path": "LICENSE"
+    },
+    {
+      "file": "licenses/general-writing-MIT.txt",
+      "sha256": "98e0d5a15fcacdc396b6580ce232b8042091240577e2e7c4037574c8d30524db",
+      "repository": "msimchowitz/writing-skills",
+      "commit": "214981fe02326f27b0fc8790d00eb4b731607073",
+      "upstream_path": "for-agents/general-writing/LICENSE"
+    },
+    {
+      "file": "licenses/humanizer-MIT.txt",
+      "sha256": "4ac4810254ab36d45419141aeb8e69bf50652cfafe5b2dab947d06d44e5cbf96",
+      "repository": "msimchowitz/writing-skills",
+      "commit": "214981fe02326f27b0fc8790d00eb4b731607073",
+      "upstream_path": "for-agents/humanizer/LICENSE"
+    }
+  ],
+  "stages": {
+    "sop_revise": {
+      "name": "SOP Reviser",
+      "version": "sop-revise-4",
+      "file": "sop_revise.md",
+      "body_sha256": "5b8f8d41b68bb86e80c62ebe2d0d128cbd812fcea460ac5eb438e59876afeb89",
+      "sha256": "15cc5afafcbc94666c512380b82caf071b0277d08089cb7a0503154a3e9f1ec9",
+      "reference_ids": [
+        "sop-consultant"
+      ]
+    },
+    "polish": {
+      "name": "Language polish",
+      "version": "polish-4",
+      "file": "polish.md",
+      "body_sha256": "5395736f9bfce4c9048dd27a5d8a97c651494ad6860239f5446701a88d71e6c4",
+      "sha256": "a3c66f3e47c24d582b068895bd6a6d9efdfa30492ff3a10f0b6ee27ff7806613",
+      "reference_ids": [
+        "general-writing"
+      ]
+    },
+    "humanize": {
+      "name": "Final Humanizer",
+      "version": "humanize-4",
+      "file": "humanize.md",
+      "body_sha256": "b6ae9f3c844a8eecc3096ebf783100b37ec1c5ba00e650576eecc533ad53347a",
+      "sha256": "e8d4f7bc579c5600b1e6d2bdcfa3d585520736a06cc5d9f1518e2334caee2681",
+      "reference_ids": [
+        "humanizer"
+      ]
+    },
+    "verify_revision": {
+      "name": "Read-only revision verification",
+      "version": "verify-revision-4",
+      "file": "verify_revision.md",
+      "body_sha256": "5d8856d38f6a08164942d4fda99c01384f19907e40a786a74c30c19838a955e5",
+      "sha256": "eeb71fa19eb1e82415b504e52f11022936295afbb2243fb78eecd117b9d90af0",
+      "reference_ids": [
+        "sop-consultant",
+        "general-writing",
+        "humanizer"
+      ]
+    }
+  }
+}

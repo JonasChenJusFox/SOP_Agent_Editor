@@ -1,0 +1,13 @@
+[review]
+provider = "fixture"
+fixtures = "fixtures"
+max_workers = 4
+
+[workflow]
+provider = "rule"
+
+[writer]
+provider = "rule"
+
+[rounds]
+max_rounds = 3

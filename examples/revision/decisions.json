@@ -1,0 +1,29 @@
+{
+  "decisions": [
+    {
+      "finding_id": "structure-01",
+      "decision": "accept",
+      "reason": "Keep the original reflective sentence."
+    },
+    {
+      "finding_id": "language-01",
+      "decision": "accept",
+      "reason": "Apply this feedback using only the confirmed facts and supplied evidence."
+    },
+    {
+      "finding_id": "skeptical-01",
+      "decision": "accept",
+      "reason": "Apply this feedback using only the confirmed facts and supplied evidence."
+    },
+    {
+      "finding_id": "structure-02",
+      "decision": "accept",
+      "reason": "Apply this feedback using only the confirmed facts and supplied evidence."
+    },
+    {
+      "finding_id": "admissions-01",
+      "decision": "accept",
+      "reason": "Apply this feedback using only the confirmed facts and supplied evidence."
+    }
+  ]
+}

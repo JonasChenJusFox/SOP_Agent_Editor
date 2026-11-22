@@ -1,0 +1,19 @@
+{
+  "role": "skeptical",
+  "findings": [
+    {
+      "kind": "question",
+      "category": "evidence",
+      "severity": "high",
+      "paragraph_id": "P002",
+      "quote": "I alone designed the ranking engine.",
+      "rationale": "The synthetic evidence or explicit requirement does not support this passage.",
+      "action": "verify",
+      "replacement": null,
+      "requirement_id": null,
+      "evidence_ids": [
+        "notes.txt"
+      ]
+    }
+  ]
+}

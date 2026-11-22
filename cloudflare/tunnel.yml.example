@@ -1,0 +1,8 @@
+# Optional stable named Tunnel. Replace the placeholders and keep the actual
+# credentials JSON outside Git. The Worker API_ORIGIN points to the hostname.
+tunnel: REPLACE_WITH_TUNNEL_UUID
+credentials-file: /ABSOLUTE/PATH/TO/private/cloudflare-tunnel.json
+ingress:
+  - hostname: api.YOUR_DOMAIN.example
+    service: http://127.0.0.1:8789
+  - service: http_status:404

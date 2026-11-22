@@ -1,0 +1,170 @@
+{
+  "input": {
+    "draft": "While building a campus shuttle tracker with three classmates, I wrote the parser that turned inconsistent arrival messages into a single feed. Reviewing those errors made me interested in how software can stay useful when its inputs are unreliable.\n\nI built the the replay tool that let us investigate failures using saved messages. Our system eliminated delays for everyone on campus.\n\nIn graduate school, I want to study distributed systems. Your university has outstanding resources that will help me grow.\n",
+    "requirements": "Describe one experience that shaped your interest in computer science. Explain what you personally contributed, what you want to study next, and why this program is a fit. Maximum 500 English words.\n",
+    "preferences": "Use direct, natural English. Preserve my first-person voice. Treat individual contributions and team results as distinct. Ask for information when the draft makes an outcome claim that my notes cannot support.\n",
+    "evidence": [
+      {
+        "id": "program.txt",
+        "text": "Fictional program handout for a synthetic exercise; this is not a real institution. Northbridge Institute offers a Distributed Systems Studio. The studio asks students to replay failure traces and reason about recovery under unreliable inputs.\n"
+      },
+      {
+        "id": "team-notes.txt",
+        "text": "Synthetic notes for the demo. The author owned the parser and implemented the message replay tool. The team tested with 20 saved messages. The team did not track shuttle delays or measure campus-wide outcomes.\n"
+      }
+    ],
+    "claims": {
+      "claims": [
+        {
+          "id": "CLM-PARSER",
+          "paragraph_id": "P001",
+          "quote": "I wrote the parser that turned inconsistent arrival messages into a single feed.",
+          "type": "personal_contribution",
+          "subject": "synthetic author",
+          "action_or_result": "wrote the parser",
+          "date": null,
+          "value": null,
+          "unit": null,
+          "scope": "campus-shuttle-demo",
+          "citations": [
+            {
+              "source_id": "team-notes.txt",
+              "quote": "The author owned the parser and implemented the message replay tool.",
+              "relation": "supports",
+              "scope": "campus-shuttle-demo"
+            }
+          ],
+          "confirmed_by": "synthetic-example-annotator"
+        },
+        {
+          "id": "CLM-OUTCOME",
+          "paragraph_id": "P002",
+          "quote": "Our system eliminated delays for everyone on campus.",
+          "type": "team_outcome",
+          "subject": "synthetic team",
+          "action_or_result": "eliminated campus delays",
+          "date": null,
+          "value": null,
+          "unit": null,
+          "scope": "campus-shuttle-demo",
+          "citations": [
+            {
+              "source_id": "team-notes.txt",
+              "quote": "The team did not track shuttle delays or measure campus-wide outcomes.",
+              "relation": "partial",
+              "scope": "campus-shuttle-demo"
+            }
+          ],
+          "confirmed_by": "synthetic-example-annotator"
+        }
+      ]
+    },
+    "sources": {
+      "team-notes.txt": {
+        "type": "team_record",
+        "origin": "synthetic demo notes; no real applicant",
+        "retrieved_at": "2026-11-18",
+        "valid_until": "",
+        "scope": "campus-shuttle-demo"
+      },
+      "program.txt": {
+        "type": "official_program",
+        "origin": "fictional program handout for synthetic testing only",
+        "retrieved_at": "2026-11-18",
+        "valid_until": "",
+        "scope": "northbridge-demo"
+      }
+    },
+    "as_of": "2026-11-18"
+  },
+  "plan_input": {
+    "decisions": [
+      {
+        "finding_id": "structure-01",
+        "decision": "accept",
+        "reason": "Keep the original reflective sentence."
+      },
+      {
+        "finding_id": "language-01",
+        "decision": "accept",
+        "reason": "Apply this feedback using only the confirmed facts and supplied evidence."
+      },
+      {
+        "finding_id": "skeptical-01",
+        "decision": "accept",
+        "reason": "Apply this feedback using only the confirmed facts and supplied evidence."
+      },
+      {
+        "finding_id": "structure-02",
+        "decision": "accept",
+        "reason": "Apply this feedback using only the confirmed facts and supplied evidence."
+      },
+      {
+        "finding_id": "admissions-01",
+        "decision": "accept",
+        "reason": "Apply this feedback using only the confirmed facts and supplied evidence."
+      }
+    ],
+    "confirmed_facts": [
+      {
+        "id": "FACT-PROJECT",
+        "text": "I wrote the parser and built the replay tool for a campus shuttle tracker with three classmates.",
+        "confirmed": true,
+        "kind": "personal_contribution",
+        "evidence_ids": [
+          "team-notes.txt"
+        ],
+        "citations": [
+          {
+            "source_id": "team-notes.txt",
+            "quote": "The author owned the parser and implemented the message replay tool."
+          }
+        ]
+      },
+      {
+        "id": "FACT-RESULT",
+        "text": "Our team tested with 20 saved messages. We did not measure campus-wide shuttle delays.",
+        "confirmed": true,
+        "kind": "number",
+        "evidence_ids": [
+          "team-notes.txt"
+        ],
+        "citations": [
+          {
+            "source_id": "team-notes.txt",
+            "quote": "The team tested with 20 saved messages. The team did not track shuttle delays or measure campus-wide outcomes."
+          }
+        ]
+      },
+      {
+        "id": "FACT-PROGRAM",
+        "text": "Northbridge Institute offers a Distributed Systems Studio. The studio asks students to replay failure traces and reason about recovery under unreliable inputs.",
+        "confirmed": true,
+        "kind": "program_info",
+        "evidence_ids": [
+          "program.txt"
+        ],
+        "citations": [
+          {
+            "source_id": "program.txt",
+            "quote": "Northbridge Institute offers a Distributed Systems Studio. The studio asks students to replay failure traces and reason about recovery under unreliable inputs."
+          }
+        ]
+      },
+      {
+        "id": "FACT-GOAL",
+        "text": "I want to study recovery in distributed systems and learn to reason about how input assumptions affect a design.",
+        "confirmed": true,
+        "kind": "goal",
+        "evidence_ids": [],
+        "citations": []
+      }
+    ],
+    "answers": {
+      "skeptical-01": "Our team tested with 20 saved messages. We did not measure campus-wide delays, so remove that outcome claim."
+    },
+    "essay_type": "sop",
+    "writing_sample": "",
+    "word_limit": 500
+  }
+}

@@ -1,0 +1,111 @@
+%PDF-1.7
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [9 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type0 /BaseFont /STSong-Light /Encoding /Identity-H /DescendantFonts [4 0 R] /ToUnicode 5 0 R >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /CIDFontType0 /BaseFont /STSong-Light /CIDSystemInfo << /Registry (Adobe) /Ordering (GB1) /Supplement 4 >> /FontDescriptor 6 0 R /DW 500 >>
+endobj
+5 0 obj
+<< /Length 840 >>
+stream
+/CIDInit /ProcSet findresource begin
+12 dict begin
+begincmap
+/CIDSystemInfo << /Registry (Adobe) /Ordering (UCS) /Supplement 0 >> def
+/CMapName /SyntheticUnicode def
+/CMapType 2 def
+1 begincodespacerange
+<0000> <FFFF>
+endcodespacerange
+37 beginbfchar
+<0001> <0053>
+<0002> <0079>
+<0003> <006e>
+<0004> <0074>
+<0005> <0068>
+<0006> <0065>
+<0007> <0069>
+<0008> <0063>
+<0009> <0020>
+<000a> <0061>
+<000b> <0070>
+<000c> <006c>
+<000d> <006f>
+<000e> <0073>
+<000f> <002e>
+<0010> <0049>
+<0011> <0064>
+<0012> <006d>
+<0013> <0032>
+<0014> <0067>
+<0015> <0045>
+<0016> <0072>
+<0017> <0066>
+<0018> <0062>
+<0019> <0034>
+<001a> <0025>
+<001b> <4f5c>
+<001c> <8005>
+<001d> <8d1f>
+<001e> <8d23>
+<001f> <8bb0>
+<0020> <5f55>
+<0021> <5b9e>
+<0022> <9a8c>
+<0023> <7ed3>
+<0024> <679c>
+<0025> <3002>
+endbfchar
+endcmap
+CMapName currentdict /CMap defineresource pop
+end
+end
+endstream
+endobj
+6 0 obj
+<< /Type /FontDescriptor /FontName /STSong-Light /Flags 6 /FontBBox [0 -200 1000 900] /ItalicAngle 0 /Ascent 880 /Descent -120 /CapHeight 880 /StemV 80 >>
+endobj
+7 0 obj
+<< /Type /XObject /Subtype /Image /Width 1 /Height 1 /ColorSpace /DeviceGray /BitsPerComponent 8 /Filter /ASCIIHexDecode /Length 3 >>
+stream
+FF>
+endstream
+endobj
+8 0 obj
+<< >>
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> /XObject << /Im1 7 0 R >> >> /Contents 10 0 R >>
+endobj
+10 0 obj
+<< /Length 459 >>
+stream
+BT /F1 12 Tf 72 720 Td <0001000200030004000500060004000700080009000a000b000b000c00070008000a00040007000d000300090006000e000e000a0002000f> Tj ET
+BT /F1 12 Tf 72 694 Td <0010000900050006000c000b00060011000900120002000900040006000a0012000900040006000e000400090013000900110006000e000700140003000e000f0009001500160016000d0016000e000900170006000c000c000900180002000900190013001a000f> Tj ET
+BT /F1 12 Tf 72 668 Td <001b001c001d001e001f002000210022002300240025> Tj ET
+endstream
+endobj
+xref
+0 11
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000252 00000 n 
+0000000431 00000 n 
+0000001322 00000 n 
+0000001492 00000 n 
+0000001662 00000 n 
+0000001683 00000 n 
+0000001836 00000 n 
+trailer
+<< /Size 11 /Root 1 0 R >>
+startxref
+2347
+%%EOF

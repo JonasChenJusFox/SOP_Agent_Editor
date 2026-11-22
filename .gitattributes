@@ -1,0 +1,5 @@
+# Document fixtures must retain their original binary bytes.
+*.pdf binary
+*.docx binary
+# Preserve vendored license notices verbatim, including their final blank line.
+src/admissions_editor/revision_prompts/licenses/* whitespace=-blank-at-eof

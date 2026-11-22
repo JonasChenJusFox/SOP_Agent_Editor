@@ -1,6 +1,22 @@
 # 申请文书 Agent 构建方案
 
+本机默认知识库通过 `knowledge_sources.py` 读取 `knowledge.toml`，
+`knowledge.py` 只读 Git tracked 文件或显式授权导出，SQLite 缓存位于
+`private/knowledge/index.sqlite3`，Schema 见 `knowledge.schema.sql`。
+每条主张只检索相关片段，冻结 repo/commit/snapshot/path/lines/excerpt 并在四角色
+相同快照、完整改稿和技术核验中复用。宿主在修订/审批/接受前验证来源新鲜度及
+实际索引行；纯核心验证不打开文件或数据库。源仓库只读、索引可写、整个私有
+知识目录忽略 Git。云端缺少本地来源时明确报告，不自动传输私有代码。
+具体行为、范围与运行步骤见 [knowledge.md](knowledge.md)。
+
 这个项目处理研究生申请中的 SOP、Personal Statement 和短答。第一版从已有文稿开始，把每条建议定位到原文或申请要求，生成一份可用于人工决策的审稿报告。后续增加事实核验、独立裁决，以及根据已确认素材生成初稿。
+
+技术文书改稿增加 `technical.py`：在准备计划时从冻结的原稿/证据提取术语、
+技术主张、数据与贡献关系，随可选 glossary 绑定到计划。三个写作阶段共用
+同一上下文，风险提案被单独记录并保留上一安全文本；Humanizer 后的原有只读
+verifier 返回逐条 technical_checks，机械校验与模型核验共同控制最终接受。
+技术上下文、核验记录和确认回执经现有 CLI/本机 Web/Cloudflare 共用，不增加
+数据库或独立模型阶段。数据格式与边界见 [technical-accuracy.md](technical-accuracy.md)。
 
 审稿围绕原文依据、修改收益和作者声音展开。每条意见回答这句话是否有证据、改动能解决什么问题、改后是否还像作者本人。报告可以建议保留原文或先向作者核实。
 
@@ -119,3 +135,95 @@ V2 用「已支持」「部分支持」「来源冲突」「待补证据」记�
 ## 本地使用与隐私
 
 默认可使用虚构样例完成离线运行。原稿、CV、成绩、作者材料、运行数据和密钥分开管理，真实数据目录及环境文件应排除在 Git 提交之外。使用在线审稿时选择要发出的文本和来源片段，对日志保留角色状态、模型标识、时延和错误分类，作者材料交由明确选定的本地项目目录保存。从报告导出或分享前应可检查敏感内容及私有证据引用。后续按照作者选择设置路径、保留期限和删除范围。
+
+## 当前实现对照（2026-11-18）
+
+本节记录方案在仓库中的实际落地情况。前文“后续”“V2”“V3”描述的是阶段设计；当前 0.3.0 已有以下本地实现。
+
+| 阶段 | 实现与对应文件 | 本地验收 | 仍需补齐或外部验证 |
+| --- | --- | --- | --- |
+| MVP | `review.py` 冻结快照、四角色、校验、聚合；`providers.py` 无历史请求；`cli.py` 报告、Diff、独占审批及回执 | 角色请求/对象隔离、Schema、无效/重复引句、未知证据、部分失败、重叠、过期审批、新稿另存 | 真实 API 和目标模型的响应可用性 |
+| V2 台账 | `facts.py`；`contracts.py`；`examples/claims.json`、`sources.json` | 五类主张；来源哈希、精确片段、范围、日期、具名核验；四种状态；失效/冲突/缺失可观察 | 全篇语义主张覆盖、来源能否实际蕴含主张的人工核对；规则不会冒充核验者 |
+| V2 裁决与审计 | `workflow.py`、`candidate-details.json`、`adjudication.json`、`audit.json` | 观察阶段不含意见；二阶段允许列表去模型身份；动作/解释/事实结论/重叠候选分歧；裁决失败暂停审批；逐项 Diff、台账与版本可回溯 | 离线为规则替代；真实模型的语义裁决、排序敏感性和任意改述对齐需模型/人工实验 |
+| V2 初稿 | `generation.py`；`generate` CLI；`examples/materials.json` | 仅确认正文进入 Writer，段落素材映射，缺失问题显式待补；生成信息不进入审稿载荷 | 真实模型生成质量与作者确认；程序只校验引用与结构，不能证明每句无幻觉 |
+| V3 模型配置 | `config.py`；`examples/offline.toml`、`online.toml`、`.env.example` | 角色独立模型/提供者、超时、并发与有限重试；默认环境模型；配置不含密钥 | 多模型真实质量和成本对照；目前在线供应商仅 OpenAI |
+| V3 复审 | `workflow.py`；`review --parent-run --approval-receipt`；`feedback` | 新稿先盲审再定向检查；new/persistent/resolved/recurring/deferred；回执绑定；作者反馈；轮次继承/上限与停止原因 | 语义关闭须作者确认；跨措辞问题身份仅保守对齐；无自动连续改稿 |
+| V3 评估 | `evaluation.py`、`benchmark.py`、`annotations.py`；`examples/evaluation/` | 16 份/8 家族合成数据；标注契约与盲包；原始一致率；单次/四角色/裁决策略；FPR/召回/偏差计数和区间 | 真实 A/B 生成稿、独立人工金标准、30–50/100 家族试点与冻结留出；真实发布门槛尚未验证 |
+
+CLI 存储采用本地文件；全云端 Web 存储采用下文的 Cloudflare D1。`run.json` 格式升级为 schema_version=2；旧格式运行仍可阅读，审批须重新审稿，不提供隐式迁移。完整输入哈希包括正文、题目、偏好、证据、主张/来源映射、角色模型标识和提示/规则版本；候选 ID 也绑定该哈希。报告的 `complete` 仅表示工作流成功，待核事实或高优先级问题仍可存在。
+
+证据 ID 存在、多人一致与“已支持”是三个不同概念。规则提取只生成待核主张；具名人工映射通过片段、范围、日期校验后才可建立支持。裁决是建议，其 adopt 也不能绕过内容词、数字、冲突及低严重度 Language 的审批限制。原稿、证据和台账都冻结保留；审批基于该快照，修改原始证据后须新开审稿才能使用新证据。
+
+当前分歧识别和跨轮身份使用可复核的范围/类别/动作与规范化引句规则；它们可能漏掉改述后的同义问题。事实或大段语义改写由作者另行编辑，再作为新输入审稿；当前逐项应用接口仅处理保守语言候选。真实材料不随测试、日志或提交保存；所有提交样本均为虚构。可复现安装、离线端到端、在线配置、审批、标注和数据清单见 README，实际命令结果见 `docs/validation.md`。
+
+## Web 与 Cloudflare 接入（2026-11-18，已升级为全云端）
+
+```mermaid
+flowchart LR
+  A[浏览器：拖拽 / Attach / 编辑] --> B[Cloudflare Python Worker：静态文件与同源 API]
+  B --> C[Cloudflare Workflow：持久化步骤]
+  B --> D[Cloudflare D1：任务、快照与产物]
+  C --> E[run_review：四角色独立请求]
+  E --> F[enrich_run：台账与两段裁决]
+  F --> D
+  B --> H[approval_artifacts：原有版本与修改校验]
+  H --> I[独立新稿与审批回执]
+  I --> D
+```
+
+`src/admissions_editor/web/` 为原生前端，文档解析资源由构建命令生成；`cloudflare/python/entry.py` 为原生 Python Worker/Workflow，`cloud_app.py` 实现 D1 持久任务、登录和下载。排队/运行合计最多 4；每次模型请求作为单独的持久化步骤，已完成步骤可恢复，Workflow 不额外自动重试付费步骤。网页提供审稿、裁决恢复和完整改稿；从素材生成初稿、多轮关联及评估仍由已有 CLI 完成。
+
+`cloud_runtime.py` 在无系统线程/文件服务的环境中复用原 Python 流程；OpenAI 适配器生成的请求由宿主异步 fetch 执行，并将响应交回同一套 Schema、引句、证据、裁决校验。`cli.py` 提取无文件 I/O 的 `review_artifacts`、`approval_artifacts`，本机和云端共享这些逻辑。模型调用配置和原稿快照冻结进 D1，来源变化后旧审批不能作用到新输入。
+
+访问密码、OpenAI Key 和默认模型使用用户账号的 Cloudflare Secret，普通构建子进程仍移除这些环境变量，专用 secrets 命令经 stdin 上传。Cookie 为 HttpOnly/Secure/SameSite，D1 只存会话哈希；跨站与超限请求被拒绝，下载只允许对应任务的 review/outputs 文件。原稿与模型内容只用 textContent 展示，不进入访问日志。D1 事务保证审稿文件与完成状态、新稿与回执分别原子发布。
+
+`scripts/cloud_deploy.py` 提供构建工具初始化、数据库迁移、部署、Secret 配置；关闭本机不影响云端。旧 `webserver.py` 和 `scripts/cloudflare.py up` 继续支持本机离线/可选 Tunnel，旧 JS 转发配置移至 `cloudflare/wrangler.tunnel.jsonc`。全云端资源、Schema、备份、配置和可复制命令见 [cloudflare.md](cloudflare.md)。
+
+PDF/DOCX 网页入口由 `web/documents.js` 管理独立解析 Worker，`web-src/document-worker.js` 使用 PDF.js / Mammoth 提取纯文本。`scripts/build_web.mjs` 构建自托管脚本、PDF 子 Worker、字体/CMaps 及许可证，`npm ci` 和部署命令均自动构建。原始二进制不上传，提取文字经作者核对后进入原有冻结快照和审批流程；证据保留 `.pdf` / `.docx` 原文件名作为 ID。后台仍只接收文本 JSON，无新增数据库迁移或云服务。
+
+## 审稿后生成完整文章（2026-11-19）
+
+```mermaid
+flowchart LR
+  R[冻结审稿与原稿] --> D[作者逐项决定和确认事实]
+  D --> P[版本绑定修改计划]
+  P --> S[SOP Reviser 完整改稿]
+  S --> L[克制润色]
+  L --> H[Humanizer 最后写作]
+  H --> V[只读核验]
+  V --> C[全文候选 Diff 追踪和阻塞项]
+  C --> A[作者接受确切版本]
+  A --> F[独立新稿和回执]
+```
+
+`revision.py` / `revision_schema.py` 独立于低风险补丁审批协议，提供完整改稿。
+`prepare_revision_plan` 将每条原始 finding ID 的 accept/reject/defer 决定、理由、
+提问与确认答案冻结到计划，绑定原审稿文件、原稿、输入、证据与 skill 提示摘要。
+缺失决定不会自动采纳。未确认素材的正文不发送模型；写作样本只作为声音参考。
+项目事实需引用已有证据的准确片段，不能由通用 SOP 经验或 Reviewer 的建议推断。
+
+实质改稿可调整段落、开头、目标和经历组织，不受旧 `CHG-*` 的 240 字符限制。
+三个写作阶段分别保存全文、处理的 finding ID 与使用的确认事实 ID；最后核验
+比较四个版本，对每个建议和原稿/最终段落做引用追踪。程序重新验证结构、引用、
+哈希、保护片段、数字及单位和字数，模型负责语义一致性、建议覆盖和声音检查。
+模型与机械检查共同通过才标记 ready；模型报告仍不能代替证据蕴含关系和作者验收。
+缺少素材、冲突、模型失败、伪造引用、数字漂移或核验失败会留下候选和具体阻塞项。
+
+Humanizer 后不再调用写作步骤。`finalize_revision` 重建校验与追踪，只接受完全
+一致的候选及计划哈希。作者单独确认全文后输出新稿和专用
+`.revision-acceptance.json`，原稿不变；此回执和旧补丁审批回执是两种不同协议。
+CLI 每步还重新读取原始 `--run` 和 `--draft` 字节；网页绑定服务端冻结快照。
+
+`editorial_skills.py` 从随包发布的 `revision_prompts/` 加载四个固定版本提示；
+来源 commit、SHA-256 和 MIT 声明记录在 manifest 与 licenses。仓库内
+`.agents/skills/admissions-revision/SKILL.md` 指导 Codex 协助操作；应用直接加载
+提示资源，不依赖本机个人 skills 或上游递归调用。来源与适配差异见
+[skills.md](skills.md)。
+
+`revision_web.py` 为本机和云端共享哈希绑定适配器。
+`cloud_runtime.next_revision_action` 用四次可持久恢复的模型步骤运行同一引擎。
+D1 迁移 `0002_full_revision.sql` 为原 jobs 增加 kind 与父任务索引；复用 files
+分块、事务和现有 Workflow，新增 `revision/` 产物前缀。ready 映射作业 complete，
+保留候选的 blocked/failed 记录映射 partial，异常中止映射 failed。
+云端最终稿与确认回执同事务发布，新增端点见 [cloudflare.md](cloudflare.md)，
+完整 CLI 与离线样例见 [revision.md](revision.md)。

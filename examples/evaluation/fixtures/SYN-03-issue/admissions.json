@@ -1,0 +1,17 @@
+{
+  "role": "admissions",
+  "findings": [
+    {
+      "kind": "issue",
+      "category": "admissions",
+      "severity": "high",
+      "paragraph_id": "P002",
+      "quote": "I want graduate training.",
+      "rationale": "The synthetic evidence or explicit requirement does not support this passage.",
+      "action": "revise",
+      "replacement": null,
+      "requirement_id": "WHY_PROGRAM",
+      "evidence_ids": []
+    }
+  ]
+}

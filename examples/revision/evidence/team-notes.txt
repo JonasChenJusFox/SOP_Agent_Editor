@@ -1,0 +1,1 @@
+Synthetic notes for the demo. The author owned the parser and implemented the message replay tool. The team tested with 20 saved messages. The team did not track shuttle delays or measure campus-wide outcomes.

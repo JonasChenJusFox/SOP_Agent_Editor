@@ -1,0 +1,1 @@
+Fictional program handout for a synthetic exercise; this is not a real institution. Northbridge Institute offers a Distributed Systems Studio. The studio asks students to replay failure traces and reason about recovery under unreliable inputs.

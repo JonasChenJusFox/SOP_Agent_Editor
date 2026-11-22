@@ -1,0 +1,32 @@
+{
+  "claims": [
+    {
+      "id": "CLM-PARSER",
+      "paragraph_id": "P001",
+      "quote": "I wrote the parser that turned inconsistent arrival messages into a single feed.",
+      "type": "personal_contribution",
+      "subject": "synthetic author",
+      "action_or_result": "wrote the parser",
+      "date": null,
+      "value": null,
+      "unit": null,
+      "scope": "campus-shuttle-demo",
+      "citations": [{"source_id": "team-notes.txt", "quote": "The author owned the parser and implemented the message replay tool.", "relation": "supports", "scope": "campus-shuttle-demo"}],
+      "confirmed_by": "synthetic-example-annotator"
+    },
+    {
+      "id": "CLM-OUTCOME",
+      "paragraph_id": "P002",
+      "quote": "Our system eliminated delays for everyone on campus.",
+      "type": "team_outcome",
+      "subject": "synthetic team",
+      "action_or_result": "eliminated campus delays",
+      "date": null,
+      "value": null,
+      "unit": null,
+      "scope": "campus-shuttle-demo",
+      "citations": [{"source_id": "team-notes.txt", "quote": "The team did not track shuttle delays or measure campus-wide outcomes.", "relation": "partial", "scope": "campus-shuttle-demo"}],
+      "confirmed_by": "synthetic-example-annotator"
+    }
+  ]
+}

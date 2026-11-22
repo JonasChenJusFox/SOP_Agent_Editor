@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "admissions-editor-agent"
-version = "0.1.0"
+version = "0.3.0"
 description = "Evidence-anchored review workflow for admissions essays"
 requires-python = ">=3.11"
 dependencies = ["jsonschema>=4.18,<5"]
@@ -16,4 +16,4 @@ admissions-editor = "admissions_editor.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-admissions_editor = ["review.schema.json"]
+admissions_editor = ["review.schema.json", "knowledge.schema.sql", "revision_prompts/*.md", "revision_prompts/*.json", "revision_prompts/licenses/*.txt", "web/*.html", "web/*.css", "web/*.js", "web/vendor/*.js", "web/vendor/*.mjs", "web/vendor/*.txt", "web/vendor/*.json", "web/vendor/pdfjs/cmaps/*", "web/vendor/pdfjs/standard_fonts/*"]

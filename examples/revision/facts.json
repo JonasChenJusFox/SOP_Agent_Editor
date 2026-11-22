@@ -1,0 +1,55 @@
+[
+  {
+    "id": "FACT-PROJECT",
+    "text": "I wrote the parser and built the replay tool for a campus shuttle tracker with three classmates.",
+    "confirmed": true,
+    "kind": "personal_contribution",
+    "evidence_ids": [
+      "team-notes.txt"
+    ],
+    "citations": [
+      {
+        "source_id": "team-notes.txt",
+        "quote": "The author owned the parser and implemented the message replay tool."
+      }
+    ]
+  },
+  {
+    "id": "FACT-RESULT",
+    "text": "Our team tested with 20 saved messages. We did not measure campus-wide shuttle delays.",
+    "confirmed": true,
+    "kind": "number",
+    "evidence_ids": [
+      "team-notes.txt"
+    ],
+    "citations": [
+      {
+        "source_id": "team-notes.txt",
+        "quote": "The team tested with 20 saved messages. The team did not track shuttle delays or measure campus-wide outcomes."
+      }
+    ]
+  },
+  {
+    "id": "FACT-PROGRAM",
+    "text": "Northbridge Institute offers a Distributed Systems Studio. The studio asks students to replay failure traces and reason about recovery under unreliable inputs.",
+    "confirmed": true,
+    "kind": "program_info",
+    "evidence_ids": [
+      "program.txt"
+    ],
+    "citations": [
+      {
+        "source_id": "program.txt",
+        "quote": "Northbridge Institute offers a Distributed Systems Studio. The studio asks students to replay failure traces and reason about recovery under unreliable inputs."
+      }
+    ]
+  },
+  {
+    "id": "FACT-GOAL",
+    "text": "I want to study recovery in distributed systems and learn to reason about how input assumptions affect a design.",
+    "confirmed": true,
+    "kind": "goal",
+    "evidence_ids": [],
+    "citations": []
+  }
+]

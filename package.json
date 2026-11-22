@@ -1,0 +1,28 @@
+{
+  "name": "admissions-editor-web",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:web": "node scripts/build_web.mjs",
+    "postinstall": "npm run build:web",
+    "test:documents": "node --test tests/documents.test.js",
+    "examples:documents": "node scripts/document_examples.mjs",
+    "cloudflare:dev": ".venv/bin/admissions-editor serve --config examples/offline.toml",
+    "cloudflare:check": ".venv/bin/python scripts/cloud_deploy.py check",
+    "cloudflare:deploy": ".venv/bin/python scripts/cloud_deploy.py deploy",
+    "cloudflare:setup": ".venv/bin/python scripts/cloud_deploy.py setup",
+    "cloudflare:init": ".venv/bin/python scripts/cloud_deploy.py init",
+    "cloudflare:secrets": ".venv/bin/python scripts/cloud_deploy.py secrets",
+    "cloudflare:up": ".venv/bin/python scripts/cloudflare.py up",
+    "test:worker": "node --test tests/worker.test.js",
+    "test:frontend": "node --test tests/frontend.test.js"
+  },
+  "devDependencies": {
+    "esbuild": "0.28.2",
+    "fflate": "0.8.3",
+    "jsdom": "27.2.0",
+    "mammoth": "1.13.0",
+    "pdfjs-dist": "6.5.438",
+    "wrangler": "4.165.0"
+  }
+}

@@ -16,6 +16,7 @@
           "category": {"type": "string", "enum": ["structure", "admissions", "language", "evidence"]},
           "severity": {"type": "string", "enum": ["high", "medium", "low"]},
           "paragraph_id": {"type": "string"},
+          "requirement_id": {"type": ["string", "null"]},
           "quote": {"type": "string"},
           "rationale": {"type": "string"},
           "action": {"type": "string", "enum": ["preserve", "revise", "verify"]},

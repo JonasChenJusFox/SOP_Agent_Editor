@@ -70,3 +70,107 @@
 每次修改以经批准的操作和固定原稿版本为输入。先检查修改目标是否解决，再对人物、角色归因、结果数字、学校要求及受保护段落做回归检查。用独立审稿调用重审改稿，先独立找出新增问题，再读上一轮的未解事项。保存修改前后的问题锚点、证据状态和人工决定，便于复查范围移动后的同一问题。
 
 试点默认最多自动生成三轮审查报告，实际修改每轮由作者审批。当硬性要求通过、已确认的高优先级问题关闭、其余问题有明确的人工处理决定时结束。若连续两轮没有新增有效的高优先级发现，或者出现反复改回、证据缺失、输入版本已变，则暂停并交给作者决策。作者也可随时拒绝某项建议并记录原因。任何新增事实或受保护原文违规在交付前都要重新处理。人工反馈进入经许可的开发或校准样本，保留模型和规则版本，冻结测试集用于衡量更新效果。
+
+## 6. 可执行工具与数据格式
+
+当前实现 `src/admissions_editor/evaluation.py`、`benchmark.py`、`annotations.py`，将统计流程与模型执行分开。完整可运行命令见根目录 README。这里的实现说明优先于前文的阶段性建议，不表示建议的真实样本规模已经满足。
+
+```bash
+admissions-editor schema --kind dataset
+admissions-editor schema --kind predictions
+admissions-editor schema --kind annotations
+python scripts/build_synthetic.py
+admissions-editor evaluate --dataset examples/evaluation/dataset.json \
+  --predictions examples/evaluation/predictions.json --out runs/eval-v1
+admissions-editor benchmark --dataset examples/evaluation/dataset.json \
+  --fixtures examples/evaluation/fixtures --strategy four --out runs/benchmark-v1
+```
+
+`build_synthetic.py` 确定性重建 16 份文稿（8 个家族，每个家族包含注入问题稿与干净修复稿）、32 个点位与 32 条预设 A/B 评审运行。类别覆盖个人/团队归属、数字依据、缺失项目要求和局部语言问题，另有 16 个作者声音负例。它们全部位于 test 切分；不应拿这些固定响应的成绩校准真实模型发布阈值。扩充数据时须使用独立家族建立 dev/calibration/test。程序拒绝同家族或完全相同文档跨切分。
+
+每个 dataset 有 `version` 和 `cases`。单个案例必须包含：
+
+| 字段 | 格式与含义 |
+| --- | --- |
+| `case_id` / `family_id` / `split` | 安全文件 ID / 草稿家族 / dev、calibration 或 test |
+| `origin` / `annotation` | synthetic 或 authorized_deidentified；标注版本、标注者、第三人、状态和授权引用 |
+| `draft` / `document_sha256` | UTF-8 原文与原始文本哈希 |
+| `requirements` / `preferences` / `evidence` | 题目、作者偏好、以 ID 为键的来源正文 |
+| `writer_model` / `writer_provenance` | 实际写稿模型版本或 null；model、human 或 synthetic_assignment。仅分析阶段使用 |
+| `units` | 预先定义的范围/要求 × 类别评估单元，允许 issue、clean、uncertain |
+
+一个问题单元示例（实际可解析样本位于 `examples/evaluation/dataset.json`）：
+
+```json
+{
+  "id": "target",
+  "label": "issue",
+  "category": "evidence",
+  "severity": "high",
+  "paragraph_id": "P002",
+  "quote": "I alone designed the ranking engine.",
+  "requirement_id": null,
+  "evidence_ids": ["notes.txt"],
+  "rationale": "团队记录只能支持团队共同设计，不能支持独立完成。",
+  "acceptable_outcomes": ["verify", "revise"]
+}
+```
+
+缺失内容使用 `paragraph_id=null`、`quote=null`、`requirement_id="WHY_PROGRAM"` 等要求 ID 定位，不能伪造不存在的原文。Reviewer 仍引用最近的相关原句，并可返回该要求 ID。要求 ID 必须实际出现在题目中，采用大写字母开头的大写字母/数字/下划线/连字符形式。旧固定响应允许省略该可空字段；在线 strict Schema 要求显式返回字段。
+
+`annotation-template` 导出 `blind-cases.json` 与待填 `labels.json`，移除写稿来源、金标准 label/severity/rationale 和其他标注者结果。两位标注者独立填写 label、severity、evidence_ids、rationale。`agreement` 按 case/unit 配对，输出原始一致率、Cohen kappa、分母和需第三人核对的位置；零配对或退化 kappa 返回 null。相同标注者重复标注会报错。人工与合成标注不能混合报告。第三人复核后应创建新 dataset 版本；`annotation.status="adjudicated"` 要求两位不同标注者和一位不同的裁决者。真实材料还需要 `consent_reference`。这些 ID 是本地记录，不是系统对人员身份的认证。
+
+每个 predictions 文件包含 `version`、规范化 dataset 的 `dataset_sha256` 和 `runs`。每条 run 记录 case/hash、reviewer_model、role、arm、source、status、assessed_unit_ids、findings、调用次数/延迟/token 与角色完整性。每个 finding 记录 `unit_id`、category、severity、`rationale_valid`（true/false/null）、`confidence`（0–1 或 null）。无法匹配的警报用 `unit_id=null`。每种模型/角色/策略/预测来源配置必须覆盖整个冻结数据集；没运行或失败的案例要明确记 failed 行，不能删掉以抬高全量召回。
+
+`benchmark` 只向 Reviewer 发送正文、题目、偏好、证据和段落；它不发送金标准、写稿身份、其他 Reviewer 输出或 Writer 提示。调用顺序按 `--seed` 随机化。`single` 使用一次通用审稿提示（角色字段沿用 skeptical）；`four` 是四角色；`adjudicated` 增加两段裁决。`--config` 可按角色路由模型，`--fixtures` 支持每个 case 一个子目录。
+
+自动匹配仅使用同版本、同类别、唯一精确引句/段落或相同要求 ID。语义等价但引句不同的发现保留为未匹配，需盲审后映射到 unit；不会自动宣告其为误报。在线生成的 `rationale_valid=null` 仍可获得**暂定定位指标**，输出会列出待核理由数；人工将理由标 false 后，不计为有效查出。uncertain 单元退出主指标。无匹配发现暂时进入冻结精确率分母，同时单列为待补标注；它不自动进入已知干净点位 FPR 的分子。
+
+输出 `metrics.json` / `report.md` 按正文来源、标注状态、split、预测来源、arm、role 和实际模型分组，包含：
+
+- FPR 的点位计数与分母、干净稿误报率；不是 `1 - precision`。
+- 高严重度问题的全量召回、完整成功审稿子集召回和漏检率；失败行计入全量漏检，不能悄悄丢弃。
+- 去重后精确率、召回、理由错误、严重度低估、待核理由、未知警报、重复警报、可用性及角色成功覆盖。
+- 置信度存在时的 Brier score、分箱均值/准确率/样本量；无置信度时为 null。
+- FPR、严重召回、精确率的家族聚类 percentile bootstrap 区间（默认 500 次、种子 17），小样本标 evidence_status=insufficient。角色与报告结果不能合计为独立稿件。
+- 调用次数、耗时和成功响应的 token；未配置价格表时货币成本为 null。报告层和角色层是重复分析视角，不能相加作为总成本。
+
+自评偏差仅在同一稿件、role/arm/source 下同时存在同模型与跨模型结果时计算。先在每份稿中比较严重漏检率，再按写稿模型分别平均，最后对写稿模型等权合并；重复调用在同稿内平均，区间按家族整组重抽样。也报告同/跨模型 FPR 差。文本来源、标注状态与 split 独立分层，人工写稿参考通过同组指标观察，不强行计算“同模型”。合成 writer 分配标 `simulated_writer_assignment=true`。真实 A/B 数据需要 A、B 实际写稿，并由两种模型交叉审同稿；只把 A/B 字母换成真实模型名不构成真实自评试验。
+
+对两个模型分别运行 `benchmark --model ...`（或两份配置）后，将**相同 dataset_sha256** 的两个 predictions.json 的 runs 数组拼接到新文件，再运行 evaluate。可用以下纯本地命令合并，路径替换为你的实际产物：
+
+```bash
+python - <<'PY'
+import json
+from pathlib import Path
+from admissions_editor.review import fingerprint
+left = json.loads(Path('runs/model-a/predictions.json').read_text())
+right = json.loads(Path('runs/model-b/predictions.json').read_text())
+assert left['dataset_sha256'] == right['dataset_sha256']
+merged = {**left, 'runs': left['runs'] + right['runs']}
+Path('runs/paired-predictions.json').write_text(json.dumps(merged, ensure_ascii=False, indent=2) + '\n')
+PY
+admissions-editor evaluate --dataset private/authorized-dataset.json \
+  --predictions runs/paired-predictions.json --out runs/paired-evaluation
+```
+
+当前可验证的是评分算法、调用与版本边界、固定响应回归。真实模型能力、真实自评偏差、事实语义核验混淆矩阵、改稿引入错误、作者声音和人工采纳率，都需要实际 API 运行和获授权人工标注。当前没有这些结果，也没有据此宣称达到前文的发布门槛。
+
+2026-11-19 新增的完整改稿流程使用版本绑定的作者决定和四阶段编辑，结果分别
+记录为固定响应样例、真实模型运行和人工质量指标。固定响应 CLI/云端完整
+流程通过，属于一份合成稿的调度与校验回归。另有同份合成稿的真实 OpenAI
+四阶段运行 n=1：生成了全文候选，因详细来源追踪不完整而 blocked，未获作者
+接受。它证明连通性与失败关闭，不是盲评结果，也不提供真实改稿准确率、FPR、
+严重问题召回、自评偏差或人工满意度的分母。实际调用与产物见
+[validation.md](validation.md)及 [revision.md](revision.md)。
+
+`verify_revision` 的六项模型检查、逐条 finding 追踪、段落引用与程序检查用于
+每次运行的发布控制，不能作为独立人工金标准；核验“通过率”也不能直接当作
+改稿质量。后续应对新稿新增/丢失事实、贡献边界、题目覆盖和作者声音分别盲标，
+把同一原稿、三个写作版本及其变体保持在同一家族切分。Humanizer 不输出
+AI 检测百分比，也不把检测器分数作为优化或评估目标。
+
+技术术语扩展另有 12 个离线合成场景，验证安全表达与方法/指标/数据/贡献漂移
+的预期处理。逐条 `technical_checks` 是运行时发布控制，不是独立人工标签；
+这组回归不提供真实技术准确率。来源、样本量和实际云端结果另见
+[technical-accuracy.md](technical-accuracy.md)与验证记录。

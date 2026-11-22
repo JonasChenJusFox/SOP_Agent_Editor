@@ -1,0 +1,7 @@
+[
+  {
+    "term": "replay tool",
+    "definition": "The project's tool for replaying saved input messages while debugging. This term does not imply model training or a measured campus-wide outcome.",
+    "aliases": ["message replay tool"]
+  }
+]

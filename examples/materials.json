@@ -1,0 +1,8 @@
+{
+  "materials": [
+    {"id": "MAT-1", "text": "I wrote the parser for a synthetic campus shuttle tracker.", "confirmed": true},
+    {"id": "MAT-2", "text": "I built the replay tool and became interested in unreliable inputs.", "confirmed": true},
+    {"id": "MAT-3", "text": "Unconfirmed synthetic program resource; do not use yet.", "confirmed": false}
+  ],
+  "questions": ["补充已核实的目标项目、申请周期与字数限制"]
+}

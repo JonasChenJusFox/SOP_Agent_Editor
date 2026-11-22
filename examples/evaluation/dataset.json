@@ -1,0 +1,901 @@
+{
+  "version": "synthetic-1",
+  "cases": [
+    {
+      "case_id": "SYN-01-issue",
+      "family_id": "FAMILY-01",
+      "split": "test",
+      "origin": "synthetic",
+      "draft": "I explored synthetic project 1.\n\nI alone designed the ranking engine.\n\nThat question shaped my interest in reliable systems.\n",
+      "document_sha256": "d6c0e713ecdbfd6064a75f5f07194dcab1f38b62bc0e1aa90b955067b1114d8b",
+      "requirements": "Describe your contribution. Explain why this program fits your goals. Requirement WHY_PROGRAM: give a verified program resource.",
+      "preferences": "Keep the final reflection sentence unchanged.",
+      "evidence": {
+        "notes.txt": "The ranking engine was team work. The team tested 20 saved examples; no accuracy improvement was measured. The synthetic program offers a systems course."
+      },
+      "writer_model": "A",
+      "writer_provenance": "synthetic_assignment",
+      "annotation": {
+        "version": "synthetic-gold-1",
+        "annotators": [],
+        "adjudicator": null,
+        "status": "synthetic",
+        "consent_reference": null
+      },
+      "units": [
+        {
+          "id": "target",
+          "label": "issue",
+          "category": "evidence",
+          "severity": "high",
+          "paragraph_id": "P002",
+          "quote": "I alone designed the ranking engine.",
+          "requirement_id": null,
+          "evidence_ids": [
+            "notes.txt"
+          ],
+          "rationale": "Synthetic injected defect or its paired clean control.",
+          "acceptable_outcomes": [
+            "verify",
+            "revise"
+          ]
+        },
+        {
+          "id": "voice",
+          "label": "clean",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P003",
+          "quote": "That question shaped my interest in reliable systems.",
+          "requirement_id": null,
+          "evidence_ids": [],
+          "rationale": "Protected, clear author reflection.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "SYN-01-clean",
+      "family_id": "FAMILY-01",
+      "split": "test",
+      "origin": "synthetic",
+      "draft": "I explored synthetic project 1.\n\nOur team designed the ranking engine.\n\nThat question shaped my interest in reliable systems.\n",
+      "document_sha256": "6275187ac1b5f86dfb02a5cc7c31259bb48b75d3caa201c9aaaf3f5003018f7d",
+      "requirements": "Describe your contribution. Explain why this program fits your goals. Requirement WHY_PROGRAM: give a verified program resource.",
+      "preferences": "Keep the final reflection sentence unchanged.",
+      "evidence": {
+        "notes.txt": "The ranking engine was team work. The team tested 20 saved examples; no accuracy improvement was measured. The synthetic program offers a systems course."
+      },
+      "writer_model": "A",
+      "writer_provenance": "synthetic_assignment",
+      "annotation": {
+        "version": "synthetic-gold-1",
+        "annotators": [],
+        "adjudicator": null,
+        "status": "synthetic",
+        "consent_reference": null
+      },
+      "units": [
+        {
+          "id": "target",
+          "label": "clean",
+          "category": "evidence",
+          "severity": "high",
+          "paragraph_id": "P002",
+          "quote": "Our team designed the ranking engine.",
+          "requirement_id": null,
+          "evidence_ids": [
+            "notes.txt"
+          ],
+          "rationale": "Synthetic injected defect or its paired clean control.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        },
+        {
+          "id": "voice",
+          "label": "clean",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P003",
+          "quote": "That question shaped my interest in reliable systems.",
+          "requirement_id": null,
+          "evidence_ids": [],
+          "rationale": "Protected, clear author reflection.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "SYN-02-issue",
+      "family_id": "FAMILY-02",
+      "split": "test",
+      "origin": "synthetic",
+      "draft": "I explored synthetic project 2.\n\nOur prototype improved accuracy by 30% on all tasks.\n\nThat question shaped my interest in reliable systems.\n",
+      "document_sha256": "146df5b5849389109005f7ff53758f563cede4d281e3af1d44231339453d5051",
+      "requirements": "Describe your contribution. Explain why this program fits your goals. Requirement WHY_PROGRAM: give a verified program resource.",
+      "preferences": "Keep the final reflection sentence unchanged.",
+      "evidence": {
+        "notes.txt": "The ranking engine was team work. The team tested 20 saved examples; no accuracy improvement was measured. The synthetic program offers a systems course."
+      },
+      "writer_model": "A",
+      "writer_provenance": "synthetic_assignment",
+      "annotation": {
+        "version": "synthetic-gold-1",
+        "annotators": [],
+        "adjudicator": null,
+        "status": "synthetic",
+        "consent_reference": null
+      },
+      "units": [
+        {
+          "id": "target",
+          "label": "issue",
+          "category": "evidence",
+          "severity": "high",
+          "paragraph_id": "P002",
+          "quote": "Our prototype improved accuracy by 30% on all tasks.",
+          "requirement_id": null,
+          "evidence_ids": [
+            "notes.txt"
+          ],
+          "rationale": "Synthetic injected defect or its paired clean control.",
+          "acceptable_outcomes": [
+            "verify",
+            "revise"
+          ]
+        },
+        {
+          "id": "voice",
+          "label": "clean",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P003",
+          "quote": "That question shaped my interest in reliable systems.",
+          "requirement_id": null,
+          "evidence_ids": [],
+          "rationale": "Protected, clear author reflection.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "SYN-02-clean",
+      "family_id": "FAMILY-02",
+      "split": "test",
+      "origin": "synthetic",
+      "draft": "I explored synthetic project 2.\n\nOur team tested the prototype on 20 saved examples.\n\nThat question shaped my interest in reliable systems.\n",
+      "document_sha256": "930e337311f173090ee23d7ab2972bda2613a666b8b3fc130b49487a15be4496",
+      "requirements": "Describe your contribution. Explain why this program fits your goals. Requirement WHY_PROGRAM: give a verified program resource.",
+      "preferences": "Keep the final reflection sentence unchanged.",
+      "evidence": {
+        "notes.txt": "The ranking engine was team work. The team tested 20 saved examples; no accuracy improvement was measured. The synthetic program offers a systems course."
+      },
+      "writer_model": "A",
+      "writer_provenance": "synthetic_assignment",
+      "annotation": {
+        "version": "synthetic-gold-1",
+        "annotators": [],
+        "adjudicator": null,
+        "status": "synthetic",
+        "consent_reference": null
+      },
+      "units": [
+        {
+          "id": "target",
+          "label": "clean",
+          "category": "evidence",
+          "severity": "high",
+          "paragraph_id": "P002",
+          "quote": "Our team tested the prototype on 20 saved examples.",
+          "requirement_id": null,
+          "evidence_ids": [
+            "notes.txt"
+          ],
+          "rationale": "Synthetic injected defect or its paired clean control.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        },
+        {
+          "id": "voice",
+          "label": "clean",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P003",
+          "quote": "That question shaped my interest in reliable systems.",
+          "requirement_id": null,
+          "evidence_ids": [],
+          "rationale": "Protected, clear author reflection.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "SYN-03-issue",
+      "family_id": "FAMILY-03",
+      "split": "test",
+      "origin": "synthetic",
+      "draft": "I explored synthetic project 3.\n\nI want graduate training.\n\nThat question shaped my interest in reliable systems.\n",
+      "document_sha256": "b37b5447fb5dc423bca6bb500cf0588df596fda5ccc4b229fb879e69526fecc4",
+      "requirements": "Describe your contribution. Explain why this program fits your goals. Requirement WHY_PROGRAM: give a verified program resource.",
+      "preferences": "Keep the final reflection sentence unchanged.",
+      "evidence": {
+        "notes.txt": "The ranking engine was team work. The team tested 20 saved examples; no accuracy improvement was measured. The synthetic program offers a systems course."
+      },
+      "writer_model": "A",
+      "writer_provenance": "synthetic_assignment",
+      "annotation": {
+        "version": "synthetic-gold-1",
+        "annotators": [],
+        "adjudicator": null,
+        "status": "synthetic",
+        "consent_reference": null
+      },
+      "units": [
+        {
+          "id": "target",
+          "label": "issue",
+          "category": "admissions",
+          "severity": "high",
+          "paragraph_id": null,
+          "quote": null,
+          "requirement_id": "WHY_PROGRAM",
+          "evidence_ids": [
+            "notes.txt"
+          ],
+          "rationale": "Synthetic injected defect or its paired clean control.",
+          "acceptable_outcomes": [
+            "verify",
+            "revise"
+          ]
+        },
+        {
+          "id": "voice",
+          "label": "clean",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P003",
+          "quote": "That question shaped my interest in reliable systems.",
+          "requirement_id": null,
+          "evidence_ids": [],
+          "rationale": "Protected, clear author reflection.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "SYN-03-clean",
+      "family_id": "FAMILY-03",
+      "split": "test",
+      "origin": "synthetic",
+      "draft": "I explored synthetic project 3.\n\nThe program's verified systems course fits my goal of studying fault tolerance.\n\nThat question shaped my interest in reliable systems.\n",
+      "document_sha256": "6e811aacadada6230d635956c043f6e15dfd1806a0de79b77687cb4d4722ab7d",
+      "requirements": "Describe your contribution. Explain why this program fits your goals. Requirement WHY_PROGRAM: give a verified program resource.",
+      "preferences": "Keep the final reflection sentence unchanged.",
+      "evidence": {
+        "notes.txt": "The ranking engine was team work. The team tested 20 saved examples; no accuracy improvement was measured. The synthetic program offers a systems course."
+      },
+      "writer_model": "A",
+      "writer_provenance": "synthetic_assignment",
+      "annotation": {
+        "version": "synthetic-gold-1",
+        "annotators": [],
+        "adjudicator": null,
+        "status": "synthetic",
+        "consent_reference": null
+      },
+      "units": [
+        {
+          "id": "target",
+          "label": "clean",
+          "category": "admissions",
+          "severity": "high",
+          "paragraph_id": "P002",
+          "quote": "The program's verified systems course fits my goal of studying fault tolerance.",
+          "requirement_id": null,
+          "evidence_ids": [
+            "notes.txt"
+          ],
+          "rationale": "Synthetic injected defect or its paired clean control.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        },
+        {
+          "id": "voice",
+          "label": "clean",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P003",
+          "quote": "That question shaped my interest in reliable systems.",
+          "requirement_id": null,
+          "evidence_ids": [],
+          "rationale": "Protected, clear author reflection.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "SYN-04-issue",
+      "family_id": "FAMILY-04",
+      "split": "test",
+      "origin": "synthetic",
+      "draft": "I explored synthetic project 4.\n\nI built the the prototype.\n\nThat question shaped my interest in reliable systems.\n",
+      "document_sha256": "611c19b592ce2af5ee1801cbd2b4d52efd3489d433b4bf16460dc73391659ee8",
+      "requirements": "Describe your contribution. Explain why this program fits your goals. Requirement WHY_PROGRAM: give a verified program resource.",
+      "preferences": "Keep the final reflection sentence unchanged.",
+      "evidence": {
+        "notes.txt": "The ranking engine was team work. The team tested 20 saved examples; no accuracy improvement was measured. The synthetic program offers a systems course."
+      },
+      "writer_model": "A",
+      "writer_provenance": "synthetic_assignment",
+      "annotation": {
+        "version": "synthetic-gold-1",
+        "annotators": [],
+        "adjudicator": null,
+        "status": "synthetic",
+        "consent_reference": null
+      },
+      "units": [
+        {
+          "id": "target",
+          "label": "issue",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P002",
+          "quote": "I built the the prototype.",
+          "requirement_id": null,
+          "evidence_ids": [
+            "notes.txt"
+          ],
+          "rationale": "Synthetic injected defect or its paired clean control.",
+          "acceptable_outcomes": [
+            "verify",
+            "revise"
+          ]
+        },
+        {
+          "id": "voice",
+          "label": "clean",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P003",
+          "quote": "That question shaped my interest in reliable systems.",
+          "requirement_id": null,
+          "evidence_ids": [],
+          "rationale": "Protected, clear author reflection.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "SYN-04-clean",
+      "family_id": "FAMILY-04",
+      "split": "test",
+      "origin": "synthetic",
+      "draft": "I explored synthetic project 4.\n\nI built the prototype.\n\nThat question shaped my interest in reliable systems.\n",
+      "document_sha256": "772320e5f80c048c57bc6e5d33361ca0e1fd42aaca912900173f682ab05c0ab0",
+      "requirements": "Describe your contribution. Explain why this program fits your goals. Requirement WHY_PROGRAM: give a verified program resource.",
+      "preferences": "Keep the final reflection sentence unchanged.",
+      "evidence": {
+        "notes.txt": "The ranking engine was team work. The team tested 20 saved examples; no accuracy improvement was measured. The synthetic program offers a systems course."
+      },
+      "writer_model": "A",
+      "writer_provenance": "synthetic_assignment",
+      "annotation": {
+        "version": "synthetic-gold-1",
+        "annotators": [],
+        "adjudicator": null,
+        "status": "synthetic",
+        "consent_reference": null
+      },
+      "units": [
+        {
+          "id": "target",
+          "label": "clean",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P002",
+          "quote": "I built the prototype.",
+          "requirement_id": null,
+          "evidence_ids": [
+            "notes.txt"
+          ],
+          "rationale": "Synthetic injected defect or its paired clean control.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        },
+        {
+          "id": "voice",
+          "label": "clean",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P003",
+          "quote": "That question shaped my interest in reliable systems.",
+          "requirement_id": null,
+          "evidence_ids": [],
+          "rationale": "Protected, clear author reflection.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "SYN-05-issue",
+      "family_id": "FAMILY-05",
+      "split": "test",
+      "origin": "synthetic",
+      "draft": "I explored synthetic project 5.\n\nI alone designed the ranking engine.\n\nThat question shaped my interest in reliable systems.\n",
+      "document_sha256": "a48142d675a74fd5ea413d01942460c2b75abf82cefea043dbc7bae266346f41",
+      "requirements": "Describe your contribution. Explain why this program fits your goals. Requirement WHY_PROGRAM: give a verified program resource.",
+      "preferences": "Keep the final reflection sentence unchanged.",
+      "evidence": {
+        "notes.txt": "The ranking engine was team work. The team tested 20 saved examples; no accuracy improvement was measured. The synthetic program offers a systems course."
+      },
+      "writer_model": "B",
+      "writer_provenance": "synthetic_assignment",
+      "annotation": {
+        "version": "synthetic-gold-1",
+        "annotators": [],
+        "adjudicator": null,
+        "status": "synthetic",
+        "consent_reference": null
+      },
+      "units": [
+        {
+          "id": "target",
+          "label": "issue",
+          "category": "evidence",
+          "severity": "high",
+          "paragraph_id": "P002",
+          "quote": "I alone designed the ranking engine.",
+          "requirement_id": null,
+          "evidence_ids": [
+            "notes.txt"
+          ],
+          "rationale": "Synthetic injected defect or its paired clean control.",
+          "acceptable_outcomes": [
+            "verify",
+            "revise"
+          ]
+        },
+        {
+          "id": "voice",
+          "label": "clean",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P003",
+          "quote": "That question shaped my interest in reliable systems.",
+          "requirement_id": null,
+          "evidence_ids": [],
+          "rationale": "Protected, clear author reflection.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "SYN-05-clean",
+      "family_id": "FAMILY-05",
+      "split": "test",
+      "origin": "synthetic",
+      "draft": "I explored synthetic project 5.\n\nOur team designed the ranking engine.\n\nThat question shaped my interest in reliable systems.\n",
+      "document_sha256": "ffc35206a056bfcf76857d47b119af47b0b80126d13d96eb9e20a87d9f5c713c",
+      "requirements": "Describe your contribution. Explain why this program fits your goals. Requirement WHY_PROGRAM: give a verified program resource.",
+      "preferences": "Keep the final reflection sentence unchanged.",
+      "evidence": {
+        "notes.txt": "The ranking engine was team work. The team tested 20 saved examples; no accuracy improvement was measured. The synthetic program offers a systems course."
+      },
+      "writer_model": "B",
+      "writer_provenance": "synthetic_assignment",
+      "annotation": {
+        "version": "synthetic-gold-1",
+        "annotators": [],
+        "adjudicator": null,
+        "status": "synthetic",
+        "consent_reference": null
+      },
+      "units": [
+        {
+          "id": "target",
+          "label": "clean",
+          "category": "evidence",
+          "severity": "high",
+          "paragraph_id": "P002",
+          "quote": "Our team designed the ranking engine.",
+          "requirement_id": null,
+          "evidence_ids": [
+            "notes.txt"
+          ],
+          "rationale": "Synthetic injected defect or its paired clean control.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        },
+        {
+          "id": "voice",
+          "label": "clean",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P003",
+          "quote": "That question shaped my interest in reliable systems.",
+          "requirement_id": null,
+          "evidence_ids": [],
+          "rationale": "Protected, clear author reflection.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "SYN-06-issue",
+      "family_id": "FAMILY-06",
+      "split": "test",
+      "origin": "synthetic",
+      "draft": "I explored synthetic project 6.\n\nOur prototype improved accuracy by 30% on all tasks.\n\nThat question shaped my interest in reliable systems.\n",
+      "document_sha256": "2ca5cef2a2150d91e19acad83b3de3e20be63540854fe52ce18749d49874a2d7",
+      "requirements": "Describe your contribution. Explain why this program fits your goals. Requirement WHY_PROGRAM: give a verified program resource.",
+      "preferences": "Keep the final reflection sentence unchanged.",
+      "evidence": {
+        "notes.txt": "The ranking engine was team work. The team tested 20 saved examples; no accuracy improvement was measured. The synthetic program offers a systems course."
+      },
+      "writer_model": "B",
+      "writer_provenance": "synthetic_assignment",
+      "annotation": {
+        "version": "synthetic-gold-1",
+        "annotators": [],
+        "adjudicator": null,
+        "status": "synthetic",
+        "consent_reference": null
+      },
+      "units": [
+        {
+          "id": "target",
+          "label": "issue",
+          "category": "evidence",
+          "severity": "high",
+          "paragraph_id": "P002",
+          "quote": "Our prototype improved accuracy by 30% on all tasks.",
+          "requirement_id": null,
+          "evidence_ids": [
+            "notes.txt"
+          ],
+          "rationale": "Synthetic injected defect or its paired clean control.",
+          "acceptable_outcomes": [
+            "verify",
+            "revise"
+          ]
+        },
+        {
+          "id": "voice",
+          "label": "clean",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P003",
+          "quote": "That question shaped my interest in reliable systems.",
+          "requirement_id": null,
+          "evidence_ids": [],
+          "rationale": "Protected, clear author reflection.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "SYN-06-clean",
+      "family_id": "FAMILY-06",
+      "split": "test",
+      "origin": "synthetic",
+      "draft": "I explored synthetic project 6.\n\nOur team tested the prototype on 20 saved examples.\n\nThat question shaped my interest in reliable systems.\n",
+      "document_sha256": "14789981f37cab612de6c91322bd6b6b2ed5a70f2eb1e3be1911a5d8313af0be",
+      "requirements": "Describe your contribution. Explain why this program fits your goals. Requirement WHY_PROGRAM: give a verified program resource.",
+      "preferences": "Keep the final reflection sentence unchanged.",
+      "evidence": {
+        "notes.txt": "The ranking engine was team work. The team tested 20 saved examples; no accuracy improvement was measured. The synthetic program offers a systems course."
+      },
+      "writer_model": "B",
+      "writer_provenance": "synthetic_assignment",
+      "annotation": {
+        "version": "synthetic-gold-1",
+        "annotators": [],
+        "adjudicator": null,
+        "status": "synthetic",
+        "consent_reference": null
+      },
+      "units": [
+        {
+          "id": "target",
+          "label": "clean",
+          "category": "evidence",
+          "severity": "high",
+          "paragraph_id": "P002",
+          "quote": "Our team tested the prototype on 20 saved examples.",
+          "requirement_id": null,
+          "evidence_ids": [
+            "notes.txt"
+          ],
+          "rationale": "Synthetic injected defect or its paired clean control.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        },
+        {
+          "id": "voice",
+          "label": "clean",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P003",
+          "quote": "That question shaped my interest in reliable systems.",
+          "requirement_id": null,
+          "evidence_ids": [],
+          "rationale": "Protected, clear author reflection.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "SYN-07-issue",
+      "family_id": "FAMILY-07",
+      "split": "test",
+      "origin": "synthetic",
+      "draft": "I explored synthetic project 7.\n\nI want graduate training.\n\nThat question shaped my interest in reliable systems.\n",
+      "document_sha256": "ce114f3b89009df5a8e3722bcdc161321df14d88c2f836dfa4af22967cf5f68e",
+      "requirements": "Describe your contribution. Explain why this program fits your goals. Requirement WHY_PROGRAM: give a verified program resource.",
+      "preferences": "Keep the final reflection sentence unchanged.",
+      "evidence": {
+        "notes.txt": "The ranking engine was team work. The team tested 20 saved examples; no accuracy improvement was measured. The synthetic program offers a systems course."
+      },
+      "writer_model": "B",
+      "writer_provenance": "synthetic_assignment",
+      "annotation": {
+        "version": "synthetic-gold-1",
+        "annotators": [],
+        "adjudicator": null,
+        "status": "synthetic",
+        "consent_reference": null
+      },
+      "units": [
+        {
+          "id": "target",
+          "label": "issue",
+          "category": "admissions",
+          "severity": "high",
+          "paragraph_id": null,
+          "quote": null,
+          "requirement_id": "WHY_PROGRAM",
+          "evidence_ids": [
+            "notes.txt"
+          ],
+          "rationale": "Synthetic injected defect or its paired clean control.",
+          "acceptable_outcomes": [
+            "verify",
+            "revise"
+          ]
+        },
+        {
+          "id": "voice",
+          "label": "clean",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P003",
+          "quote": "That question shaped my interest in reliable systems.",
+          "requirement_id": null,
+          "evidence_ids": [],
+          "rationale": "Protected, clear author reflection.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "SYN-07-clean",
+      "family_id": "FAMILY-07",
+      "split": "test",
+      "origin": "synthetic",
+      "draft": "I explored synthetic project 7.\n\nThe program's verified systems course fits my goal of studying fault tolerance.\n\nThat question shaped my interest in reliable systems.\n",
+      "document_sha256": "a2196b21a18fa9a5f6b9ec1e05594d318ea5d0fdff724c3a8e89b3eeb2bbce48",
+      "requirements": "Describe your contribution. Explain why this program fits your goals. Requirement WHY_PROGRAM: give a verified program resource.",
+      "preferences": "Keep the final reflection sentence unchanged.",
+      "evidence": {
+        "notes.txt": "The ranking engine was team work. The team tested 20 saved examples; no accuracy improvement was measured. The synthetic program offers a systems course."
+      },
+      "writer_model": "B",
+      "writer_provenance": "synthetic_assignment",
+      "annotation": {
+        "version": "synthetic-gold-1",
+        "annotators": [],
+        "adjudicator": null,
+        "status": "synthetic",
+        "consent_reference": null
+      },
+      "units": [
+        {
+          "id": "target",
+          "label": "clean",
+          "category": "admissions",
+          "severity": "high",
+          "paragraph_id": "P002",
+          "quote": "The program's verified systems course fits my goal of studying fault tolerance.",
+          "requirement_id": null,
+          "evidence_ids": [
+            "notes.txt"
+          ],
+          "rationale": "Synthetic injected defect or its paired clean control.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        },
+        {
+          "id": "voice",
+          "label": "clean",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P003",
+          "quote": "That question shaped my interest in reliable systems.",
+          "requirement_id": null,
+          "evidence_ids": [],
+          "rationale": "Protected, clear author reflection.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "SYN-08-issue",
+      "family_id": "FAMILY-08",
+      "split": "test",
+      "origin": "synthetic",
+      "draft": "I explored synthetic project 8.\n\nI built the the prototype.\n\nThat question shaped my interest in reliable systems.\n",
+      "document_sha256": "041f3356ee79eaad676723c1209a079dab05f74228549b0fd76df1ca76e44272",
+      "requirements": "Describe your contribution. Explain why this program fits your goals. Requirement WHY_PROGRAM: give a verified program resource.",
+      "preferences": "Keep the final reflection sentence unchanged.",
+      "evidence": {
+        "notes.txt": "The ranking engine was team work. The team tested 20 saved examples; no accuracy improvement was measured. The synthetic program offers a systems course."
+      },
+      "writer_model": "B",
+      "writer_provenance": "synthetic_assignment",
+      "annotation": {
+        "version": "synthetic-gold-1",
+        "annotators": [],
+        "adjudicator": null,
+        "status": "synthetic",
+        "consent_reference": null
+      },
+      "units": [
+        {
+          "id": "target",
+          "label": "issue",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P002",
+          "quote": "I built the the prototype.",
+          "requirement_id": null,
+          "evidence_ids": [
+            "notes.txt"
+          ],
+          "rationale": "Synthetic injected defect or its paired clean control.",
+          "acceptable_outcomes": [
+            "verify",
+            "revise"
+          ]
+        },
+        {
+          "id": "voice",
+          "label": "clean",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P003",
+          "quote": "That question shaped my interest in reliable systems.",
+          "requirement_id": null,
+          "evidence_ids": [],
+          "rationale": "Protected, clear author reflection.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        }
+      ]
+    },
+    {
+      "case_id": "SYN-08-clean",
+      "family_id": "FAMILY-08",
+      "split": "test",
+      "origin": "synthetic",
+      "draft": "I explored synthetic project 8.\n\nI built the prototype.\n\nThat question shaped my interest in reliable systems.\n",
+      "document_sha256": "86ac095bdcbae4ba8945172a0c4d28decddb14c125dc2c4474db060dd2c2a9d0",
+      "requirements": "Describe your contribution. Explain why this program fits your goals. Requirement WHY_PROGRAM: give a verified program resource.",
+      "preferences": "Keep the final reflection sentence unchanged.",
+      "evidence": {
+        "notes.txt": "The ranking engine was team work. The team tested 20 saved examples; no accuracy improvement was measured. The synthetic program offers a systems course."
+      },
+      "writer_model": "B",
+      "writer_provenance": "synthetic_assignment",
+      "annotation": {
+        "version": "synthetic-gold-1",
+        "annotators": [],
+        "adjudicator": null,
+        "status": "synthetic",
+        "consent_reference": null
+      },
+      "units": [
+        {
+          "id": "target",
+          "label": "clean",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P002",
+          "quote": "I built the prototype.",
+          "requirement_id": null,
+          "evidence_ids": [
+            "notes.txt"
+          ],
+          "rationale": "Synthetic injected defect or its paired clean control.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        },
+        {
+          "id": "voice",
+          "label": "clean",
+          "category": "language",
+          "severity": "low",
+          "paragraph_id": "P003",
+          "quote": "That question shaped my interest in reliable systems.",
+          "requirement_id": null,
+          "evidence_ids": [],
+          "rationale": "Protected, clear author reflection.",
+          "acceptable_outcomes": [
+            "preserve",
+            "no_alert"
+          ]
+        }
+      ]
+    }
+  ]
+}
