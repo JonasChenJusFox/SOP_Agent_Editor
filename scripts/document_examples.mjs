@@ -15,8 +15,10 @@ export function makeDocx(paragraphs, table = []) {
   });
 }
 
-export function makePdf(pages, {imageOnly = false} = {}) {
-  const chars = [...new Set(pages.flat().join(""))];
+export function makePdf(pages, {imageOnly = false, lineSpacing = 26} = {}) {
+  // Object entries let tests specify real layout without a PDF authoring SDK.
+  const textOf = (line) => typeof line === "string" ? line : line.text;
+  const chars = [...new Set(pages.flat().map(textOf).join(""))];
   const codes = new Map(chars.map((char, index) => [char, index + 1]));
   const hex4 = (n) => n.toString(16).padStart(4, "0");
   const cmaps = chars.map((char) => `<${hex4(codes.get(char))}> <${Buffer.from(char, "utf16le").swap16().toString("hex")}>`).join("\n");
@@ -33,7 +35,10 @@ export function makePdf(pages, {imageOnly = false} = {}) {
   objects.set(8, "<< >>");
   pages.forEach((lines, index) => {
     const id = 9 + index * 2;
-    const stream = imageOnly ? "q 100 0 0 100 72 500 cm /Im1 Do Q" : lines.map((line, i) => `BT /F1 12 Tf 72 ${720 - i * 26} Td <${[...line].map((c) => hex4(codes.get(c))).join("")}> Tj ET`).join("\n");
+    const stream = imageOnly ? "q 100 0 0 100 72 500 cm /Im1 Do Q" : lines.map((line, i) => {
+      const spec = typeof line === "string" ? {text: line} : line;
+      return `BT /F1 ${spec.size ?? 12} Tf ${spec.x ?? 72} ${spec.y ?? 720 - i * lineSpacing} Td <${[...spec.text].map((c) => hex4(codes.get(c))).join("")}> Tj ET`;
+    }).join("\n");
     objects.set(id, `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 3 0 R >> /XObject << /Im1 7 0 R >> >> /Contents ${id + 1} 0 R >>`);
     objects.set(id + 1, `<< /Length ${Buffer.byteLength(stream)} >>\nstream\n${stream}\nendstream`);
   });

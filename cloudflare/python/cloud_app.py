@@ -14,6 +14,8 @@ from admissions_editor.webinput import MAX_BODY, MAX_TEXT, WebError
 from admissions_editor.workflow import revalidate_reviewers, verify_run
 from admissions_editor.config import revision_stage_settings
 from admissions_editor.revision_web import prepare_web_plan, validate_web_plan, revision_result, finalize_web
+from admissions_editor.editorial import (build_editorial_report, validate_editorial_report,
+    validate_feedback_request, feedback_result_fields)
 
 SECURITY = {"X-Content-Type-Options": "nosniff", "Referrer-Policy": "no-referrer",
             "Content-Security-Policy": "default-src 'self'; script-src 'self'; worker-src 'self'; style-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'",
@@ -122,7 +124,7 @@ class CloudApp:
                  for role in ("structure", "admissions", "language", "skeptical")}
         workflow = {"model": model, **config.get("workflow", {})}
         return {"roles": roles, "workflow": workflow, "revision": revision_stage_settings(config, model),
-                "max_rounds": config.get("rounds", {}).get("max_rounds", 3)}
+                "max_rounds": config.get("rounds", {}).get("max_rounds", 3), "editorial_reports": True}
 
     def configured(self):
         config = self.configuration()
@@ -223,6 +225,7 @@ class CloudApp:
             result["result"]["run_sha256"] = sha256(text.encode())
             result["result"]["knowledge_context"] = run["snapshot"].get("knowledge_context")
             result["result"]["reviewers"] = {r: {"status": v["status"], "diagnostics": v["diagnostics"]} for r, v in run["reviewers"].items()}
+            result["result"]["editorial_report"] = await self.editorial_report(job_id, text)
         return Reply(result)
 
     async def review_text(self, job_id):
@@ -234,18 +237,46 @@ class CloudApp:
     async def revision_plan(self, review_id, body=None):
         return Reply({"plan": prepare_web_plan(await self.review_text(review_id), body)})
 
+    async def editorial_report(self, review_id, source_text=None):
+        source_text = source_text if source_text is not None else await self.review_text(review_id)
+        run, source_sha = json.loads(source_text), sha256(source_text.encode())
+        try:
+            saved = await self.store.read(review_id, "review/editorial-report.json")
+        except WebError as error:
+            if error.status != 404:
+                raise
+            return build_editorial_report(run, source_sha)
+        try:
+            return validate_editorial_report(run, source_sha, json.loads(saved))
+        except (ValueError, TypeError, KeyError):
+            raise WebError(409, "综合报告与当前审稿不符，请重新审稿。") from None
+
     async def submit_revision(self, review_id, body):
         original = await self.store.job(review_id)
         source_text = await self.review_text(review_id)
         plan = validate_web_plan(source_text, body)
         if original["mode"] != "demo" and not self.revision_configured():
             raise WebError(503, "云端全文修订模型尚未配置。")
+        return await self.queue_revision(review_id, source_text, original["mode"], {"plan": plan})
+
+    async def submit_feedback_revision(self, review_id, body):
+        original = await self.store.job(review_id)
+        source_text = await self.review_text(review_id)
+        report = await self.editorial_report(review_id, source_text)
+        normalized = validate_feedback_request(source_text, report, body)
+        if original["mode"] != "demo" and not self.revision_configured():
+            raise WebError(503, "云端全文修订模型尚未配置。")
+        return await self.queue_revision(review_id, source_text, original["mode"],
+            {"feedback_request": normalized, "editorial_report": report,
+             "knowledge_context": json.loads(source_text)["snapshot"].get("knowledge_context")})
+
+    async def queue_revision(self, review_id, source_text, mode, inputs):
         job_id = secrets.token_hex(16)
         result = await self.store.sql(
             "INSERT INTO jobs(id,kind,state,stage,mode,input_json,config_json,source_id,source_sha,created_at,updated_at) "
             "SELECT ?,'revision','queued','等待全文修订',?,?,?,?,?,?,? "
             "WHERE (SELECT count(*) FROM jobs WHERE state IN ('queued','running'))<4",
-            job_id, original["mode"], json.dumps({"plan": plan}, ensure_ascii=False), json.dumps(self.configuration()),
+            job_id, mode, json.dumps(inputs, ensure_ascii=False), json.dumps(self.configuration()),
             review_id, sha256(source_text.encode()), datetime.now(timezone.utc).isoformat(), int(time.time())).run()
         if not result["meta"]["changes"]:
             raise WebError(429, "已有任务运行，请稍后再试。")
@@ -274,6 +305,7 @@ class CloudApp:
             record = json.loads(await self.store.read(job_id, "revision/revision.json"))
             files = await self.store.sql("SELECT DISTINCT path FROM files WHERE job_id=? AND path LIKE 'revision/%'", job_id).all()
             result["result"] = revision_result(record, row["source_id"], [f["path"].removeprefix("revision/") for f in files["results"]])
+            result["result"].update(feedback_result_fields(record))
         return Reply(result)
 
     async def finalize_full_revision(self, job_id, body):
@@ -351,6 +383,15 @@ class CloudApp:
                 return await self.revision_plan(job_id, await read_body(request) if request.method == "POST" else None)
             if parts[3:] == ["revisions"] and request.method == "POST":
                 return await self.submit_revision(job_id, await read_body(request))
+            if parts[3:] == ["feedback-revisions"] and request.method == "POST":
+                return await self.submit_feedback_revision(job_id, await read_body(request))
+            if parts[3:] == ["editorial-report"] and request.method == "GET":
+                return Reply({"editorial_report": await self.editorial_report(job_id)})
+            if parts[3:] == ["documents", "editorial-report.docx"] and request.method == "GET":
+                from admissions_editor.word_documents import DOCX_MIME, editorial_document
+                source_text = await self.review_text(job_id)
+                return Reply(editorial_document(await self.editorial_report(job_id, source_text), json.loads(source_text), sha256(source_text.encode())), raw=True,
+                    headers={"Content-Type": DOCX_MIME, "Content-Disposition": 'attachment; filename="editorial-report.docx"'})
             if len(parts) > 4 and parts[3] == "files" and request.method == "GET":
                 relative = "/".join(parts[4:])
                 if not relative.startswith(("review/", "outputs/")) or ".." in relative.split("/") or "\\" in relative:
@@ -366,6 +407,11 @@ class CloudApp:
                 return await self.revision_summary(job_id)
             if parts[3:] == ["finalize"] and request.method == "POST":
                 return await self.finalize_full_revision(job_id, await read_body(request))
+            if len(parts) == 5 and parts[3] == "documents" and request.method == "GET" and parts[4] in {"essay.docx", "change-report.docx"}:
+                from admissions_editor.word_documents import DOCX_MIME, revision_document
+                record = json.loads(await self.store.read(job_id, "revision/revision.json"))
+                return Reply(revision_document(record, parts[4]), raw=True,
+                    headers={"Content-Type": DOCX_MIME, "Content-Disposition": 'attachment; filename="' + parts[4] + '"'})
             if len(parts) > 4 and parts[3] == "files" and request.method == "GET":
                 relative = "/".join(parts[4:])
                 if ".." in relative.split("/") or "\\" in relative or relative.startswith("/"):

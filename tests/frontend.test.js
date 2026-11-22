@@ -70,12 +70,16 @@ async function open(t, backendAvailable = true, hash = "", settings = {}) {
       value = {plan: preparedPlan || restoredPlan};
     }
     else if (path === "/api/reviews/job1/revisions") { recordPlan = body.plan; value = {id: revisionId, state: "queued"}; }
+    else if (path === "/api/reviews/job1/feedback-revisions") {
+      recordPlan = {...restoredPlan, ...body, plan_sha256: "feedback-plan-version", editorial_context: {feedback: body.feedback, selected_skill_ids: ["sop_reviser", "language_polisher", "humanizer"]}};
+      value = {id: revisionId, state: "queued"};
+    }
     else if (path === `/api/revisions/${revisionId}`) {
       const status = settings.revisionStatus || "ready";
       value = {id: revisionId, ...(settings.nestedSourceId ? {source_id: "job1"} : {review_job_id: "job1", source_review_id: "job1"}), state: status === "failed" ? "failed" : "complete", stage: "全文修订完成",
         artifacts: ["candidate.txt", "full.diff", "plan.json", "trace.json", "validation.json", "revision.json", ...(recordPlan.technical_context || settings.technicalAccuracy ? ["technical-context.json", "technical-accuracy.json"] : []), ...(recordPlan.knowledge_context ? ["knowledge.json"] : []), ...(settings.rejectedTechnicalProposal ? ["rejected-technical-proposal.json"] : [])],
         result: {status, legacy_read_only: settings.legacyRecord, requires_replan: settings.legacyRecord, review_job_id: "job1", source_review_id: "job1", candidate_text: status === "failed" ? "" : "A complete fictional essay.\n\nI built the prototype and recorded what I learned.", candidate_sha256: "candidate-version", plan_sha256: recordPlan.plan_sha256, plan: recordPlan,
-          validation: {passed: status === "ready", blockers: settings.validationBlockers || (settings.validationBlocker ? ["An unverified contribution remains."] : status === "ready" ? [] : ["Please confirm the applicant's contribution."])}, blockers: settings.revisionBlockers || [], trace: settings.revisionTrace || [], technical_accuracy: settings.technicalAccuracy}};
+          validation: {passed: status === "ready", blockers: settings.validationBlockers || (settings.validationBlocker ? ["An unverified contribution remains."] : status === "ready" ? [] : ["Please confirm the applicant's contribution."])}, blockers: settings.revisionBlockers || [], trace: settings.revisionTrace || [], technical_accuracy: settings.technicalAccuracy, ...settings.revisionExtras}};
     }
     else if (path === `/api/revisions/${revisionId}/files/full.diff`) return settings.diffFailure ? new Response('{"error":"diff unavailable"}', {status: 503}) : new Response("--- original\n+++ candidate\n-I built the the prototype.\n+I built the prototype and recorded what I learned.\n");
     else if (path === `/api/revisions/${revisionId}/finalize`) return settings.staleFinalize ? new Response('{"error":"修订版本已经过期，请刷新。"}', {status: 409}) : new Response(JSON.stringify({revision: `/api/revisions/${revisionId}/files/outputs/final.txt`, receipt: `/api/revisions/${revisionId}/files/outputs/final.txt.approval.json`}), {status: 201});
@@ -835,4 +839,104 @@ test("re-login cannot overwrite edits made while restoring a review URL was paus
   assert.equal(page.calls.filter((call) => call.path.endsWith("/files/review/run.json")).length, 0);
   assert.equal(page.calls.filter((call) => call.path === "/api/reviews").length, 0);
   assert.equal(page.document.getElementById("approve").disabled, true);
+});
+
+const comprehensiveReport = {schema_version: "editorial-report-1", report_sha256: "report-version", summary: "Strengthen the project narrative and retain the applicant's voice.", generation_source: "openai", issues: [{number: 1, title: "Make the contribution clear", problem: "The role is hard to follow.", recommendation: "Explain the applicant's actual action without adding achievements.", finding_ids: [fullFinding.id]}, {number: 2, title: "Improve paragraph flow", problem: "The transition is abrupt.", recommendation: "Connect the project to the stated goal.", finding_ids: [fullFinding.id]}]};
+
+function leaveOverallFeedback(page, text = "整体同意。保留我的经历，重点改善段落衔接和语言，不增加成果。") {
+  inputValue(page, "#editorial-feedback", text);
+  return text;
+}
+
+async function globalReviewed(t, settings = {}) {
+  return reviewed(t, {reviewResult: {...reviewedResult, editorial_report: comprehensiveReport}, ...settings});
+}
+
+test("the default flow shows one numbered report and keeps per-finding decisions collapsed", async (t) => {
+  const {document} = await globalReviewed(t);
+  assert.equal(document.getElementById("editorial-issues").tagName, "OL");
+  assert.equal(document.querySelectorAll("#editorial-issues > li").length, 2);
+  assert.match(document.getElementById("editorial-summary").textContent, /project narrative/);
+  assert.match(document.getElementById("editorial-issues").textContent, /without adding achievements/);
+  for (const id of ["advanced-review", "advanced-decisions", "advanced-plan", "advanced-patches"]) assert.equal(document.getElementById(id).open, false);
+  assert.equal(document.querySelector(".finding-decision").closest("details").id, "advanced-decisions");
+  assert.equal(document.getElementById("editorial-feedback").tagName, "TEXTAREA");
+  assert.equal(document.getElementById("generate-feedback-revision").disabled, true);
+});
+
+test("one overall comment generates an essay and two Word links without individual decisions or finalization", async (t) => {
+  const page = await globalReviewed(t), {document, calls} = page;
+  const feedback = leaveOverallFeedback(page);
+  assert.equal(document.getElementById("generate-feedback-revision").disabled, false);
+  document.getElementById("generate-feedback-revision").click();
+  await until(() => document.querySelectorAll("#word-downloads a").length === 2);
+  const submit = calls.find((call) => call.path.endsWith("/feedback-revisions"));
+  assert.equal(submit.body.feedback, feedback);
+  assert.equal(submit.body.run_sha256, "run-version");
+  assert.equal(submit.body.editorial_report_sha256, "report-version");
+  assert.equal("decisions" in submit.body, false);
+  assert.equal("answers" in submit.body, false);
+  assert.equal(document.querySelector(".finding-reason").value, "Keep the meaning.");
+  assert.equal(calls.filter((call) => /\/revision-plan$|\/finalize$/.test(call.path)).length, 0);
+  assert.deepEqual([...document.querySelectorAll("#word-downloads a")].map((a) => new URL(a.href).pathname), [`/api/revisions/${revisionId}/documents/essay.docx`, `/api/revisions/${revisionId}/documents/change-report.docx`]);
+  assert.match(document.getElementById("word-downloads").textContent, /优化文章.*修改说明/);
+  assert.match(document.getElementById("revision-skills").textContent, /SOP Reviser.*Language Polisher.*Humanizer/);
+  assert.equal(document.getElementById("word-downloads").hidden, false);
+  leaveOverallFeedback(page, feedback + " 另保留最后一段。");
+  assert.equal(document.getElementById("word-downloads").hidden, true);
+});
+
+test("blocked global revisions offer clearly marked candidate Word documents without enabling final acceptance", async (t) => {
+  const page = await globalReviewed(t, {revisionStatus: "blocked"}), {document} = page;
+  leaveOverallFeedback(page);
+  document.getElementById("generate-feedback-revision").click();
+  await until(() => document.querySelectorAll("#word-downloads a").length === 2);
+  assert.match(document.getElementById("word-downloads").textContent, /候选文章.*待核验/);
+  assert.doesNotMatch(document.getElementById("word-downloads").textContent, /下载优化文章/);
+  assert.match(document.getElementById("word-downloads-note").textContent, /不能视为已完成的最终稿/);
+  assert.equal(document.getElementById("finalize-revision").disabled, true);
+});
+
+test("expired overall-feedback submission preserves the comment and never replays a model POST automatically", async (t) => {
+  let expired = true;
+  const page = await globalReviewed(t, {respond(path, body) {
+    if (path.endsWith("/feedback-revisions") && expired) return new Response("Unauthorized", {status: 401});
+    if (path === "/api/session" && body) expired = false;
+  }}), {document, calls} = page;
+  const feedback = leaveOverallFeedback(page);
+  document.getElementById("generate-feedback-revision").click();
+  await until(() => !document.getElementById("login-form").hidden);
+  assert.equal(document.getElementById("editorial-feedback").value, feedback);
+  assert.equal(document.getElementById("generate-feedback-revision").disabled, true);
+  login(page);
+  await until(() => document.getElementById("login-form").hidden);
+  assert.equal(document.getElementById("editorial-feedback").value, feedback);
+  assert.equal(calls.filter((call) => call.path.endsWith("/feedback-revisions")).length, 1);
+  document.getElementById("generate-feedback-revision").click();
+  await until(() => document.querySelectorAll("#word-downloads a").length === 2);
+  const submits = calls.filter((call) => call.path.endsWith("/feedback-revisions"));
+  assert.equal(submits.length, 2);
+  assert.deepEqual(submits[0].body, submits[1].body);
+});
+
+test("restoring a globally revised essay restores the literal comment without resubmitting review or revision", async (t) => {
+  const feedback = "第1点同意；保留最后一段。不要新写项目成果。";
+  const {document, calls} = await open(t, true, "#revision=" + revisionId, {reviewResult: {...reviewedResult, editorial_report: comprehensiveReport}, revisionExtras: {feedback, selected_skill_ids: ["humanizer"]}});
+  await until(() => document.querySelectorAll("#word-downloads a").length === 2);
+  assert.equal(document.getElementById("editorial-feedback").value, feedback);
+  assert.equal(document.getElementById("draft").value, sample.draft);
+  assert.match(document.getElementById("revision-skills").textContent, /Humanizer/);
+  assert.equal(calls.filter((call) => call.body && call.path !== "/api/session").length, 0);
+});
+
+test("missing consolidated reports and changed originals cannot generate a global revision", async (t) => {
+  const page = await reviewed(t), {document} = page;
+  leaveOverallFeedback(page);
+  assert.equal(document.getElementById("generate-feedback-revision").disabled, true);
+  assert.match(document.getElementById("editorial-summary").textContent, /尚无综合报告/);
+  const other = await globalReviewed(t);
+  leaveOverallFeedback(other);
+  assert.equal(other.document.getElementById("generate-feedback-revision").disabled, false);
+  inputValue(other, "#draft", "Changed source draft.");
+  assert.equal(other.document.getElementById("generate-feedback-revision").disabled, true);
 });

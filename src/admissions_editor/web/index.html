@@ -12,7 +12,7 @@
 <main>
   <header>
     <h1>文书审稿</h1>
-    <p>提交原稿和申请题目，查看独立审稿意见，再逐项批准修改。</p>
+    <p>提交文书，阅读综合建议，留下你的整体评价，再下载优化文章和修改说明。</p>
   </header>
   <p id="notice" role="status" aria-live="polite"></p>
   <form id="login-form" hidden>
@@ -70,12 +70,19 @@
         </details>
       </fieldset>
       <div class="row actions"><button id="start" type="submit">开始审稿</button><button id="load-demo" type="button" class="secondary">加载离线示例</button><button id="load-revision-demo" type="button" class="secondary">加载全文改稿示例</button><span id="mode" class="hint"></span></div>
-      <p class="hint">在线模式会把当前原稿、题目、偏好、选定证据及按主张检索的本地项目片段发送至配置的模型服务；不会上传整个仓库或本地索引。原稿保留，审批后另存新稿。</p>
+      <p class="hint">原稿保留。在线模式会将当前文字、题目和选定证据发送至服务端配置的模型；如有本地项目来源，仅发送相关片段。</p>
     </form>
     <section id="progress-section" hidden aria-live="polite"><h2>处理进度</h2><p id="progress-text"></p><progress id="progress"></progress></section>
     <section id="results" hidden>
-      <div class="row"><h2>审稿结果</h2><span id="run-status"></span></div>
+      <div class="row"><h2>1. 综合建议报告</h2><span id="run-status"></span></div>
       <p id="version-note" class="hint"></p>
+      <div id="editorial-panel">
+        <p id="editorial-summary"></p>
+        <ol id="editorial-issues" class="editorial-issues"></ol>
+        <p id="editorial-source" class="hint"></p>
+        <div id="editorial-downloads" class="row links"></div>
+      </div>
+      <details id="advanced-review"><summary>查看独立审稿与来源记录（可选）</summary>
       <ul id="coverage" class="coverage"></ul>
       <div id="diagnostics" class="error"></div>
       <div id="downloads" class="row links"></div>
@@ -83,11 +90,14 @@
       <button id="retry" type="button" class="secondary" hidden>只重试失败裁决</button>
       <div id="findings"></div>
       <details><summary id="ledger-title">事实台账</summary><ul id="ledger"></ul></details>
+      </details>
       <section id="full-revision-section" aria-labelledby="full-revision-title">
-        <h2 id="full-revision-title">生成完整修订稿</h2>
-        <p class="hint">逐项选择采纳、拒绝或暂缓，再准备修订计划。只有采纳的意见用于全文改稿；缺失的个人经历、成果或项目资料需要你补充确认。</p>
+        <h2 id="full-revision-title">2. 你的整体评价</h2>
+        <p class="hint">直接说你同意什么、希望保留什么、重点改哪里。模型会理解你的评价、选择适用的写作 skills，并生成完整文章和修改报告，无需逐条决策。</p>
         <fieldset id="revision-inputs">
-          <div id="revision-decisions"></div>
+          <label for="editorial-feedback">评价与修改要求</label>
+          <textarea id="editorial-feedback" rows="5" required placeholder="例如：整体同意，重点突出数据科学能力，保留第二段的个人经历；请减少空泛表达。涉及个人分工的事实请明确说明，未知信息不要补写。"></textarea>
+          <p id="feedback-note" class="hint">先完成审稿并阅读综合报告，再填写你的评价。</p>
           <div class="revision-options">
             <div><label for="revision-essay-type">文书类型</label><select id="revision-essay-type"><option value="sop">Statement of Purpose</option><option value="personal_statement">Personal Statement</option><option value="short_answer">申请短答</option></select></div>
             <div><label for="revision-word-limit">字数上限（可选）</label><input id="revision-word-limit" type="number" min="1" max="20000" step="1" placeholder="以申请题目为准"></div>
@@ -113,9 +123,13 @@
             <div id="revision-glossary"></div>
             <button id="add-glossary-term" type="button" class="secondary">添加术语</button>
           </details>
+          <details id="advanced-decisions"><summary>逐项决定（高级，可选）</summary><div id="revision-decisions"></div></details>
         </fieldset>
-        <div class="row actions"><button id="prepare-revision" type="button" class="secondary" disabled>准备修订计划</button><button id="generate-revision" type="button" disabled>按计划生成完整文章</button></div>
-        <p id="revision-plan-note" class="hint">先完成审稿，再逐项决定如何修改。</p>
+        <div class="row actions"><button id="generate-feedback-revision" type="button" disabled>生成优化文章和修改报告</button></div>
+        <details id="advanced-plan"><summary>手动准备逐项计划（高级）</summary>
+          <div class="row actions"><button id="prepare-revision" type="button" class="secondary" disabled>准备修订计划</button><button id="generate-revision" type="button" disabled>按计划生成完整文章</button></div>
+          <p id="revision-plan-note" class="hint">高级流程可手动指定逐项决定。</p>
+        </details>
         <ul id="revision-plan-blockers" class="blockers"></ul>
         <ul id="revision-questions"></ul>
         <details id="technical-context-panel" hidden><summary>改稿前的技术术语与主张</summary><p class="hint">从原稿、证据和作者已确认的补充事实提取，供各写作阶段保留技术含义与贡献边界。专业术语本身不是需要去除的写作问题。</p><div id="technical-context"></div></details>
@@ -129,21 +143,30 @@
           <p id="technical-proposal-note" class="hint" hidden></p>
           <div id="revision-recovery" hidden><p id="revision-recovery-note">请核对并确认实际分工和资料，重新准备修订计划后，再生成全文。</p><a id="revision-recovery-facts" href="#revision-facts">补充并确认事实</a><p id="revision-source-guidance" class="hint" hidden></p><a id="revision-recovery-sources" href="#revision-knowledge-panel" hidden>查看本次项目来源</a></div>
           <pre id="revision-candidate" class="essay-preview" tabindex="0" aria-label="完整修订文章"></pre>
+          <h3>3. 文章与修改说明</h3>
+          <p id="revision-skills" class="hint"></p>
+          <div id="word-downloads" class="row links word-downloads"></div>
+          <p id="word-downloads-note" class="hint"></p>
+          <div id="revision-change-summary"></div>
           <details id="revision-diff-panel"><summary>查看原稿与完整修订稿的 Diff</summary><pre id="revision-diff" class="diff-preview" tabindex="0"></pre></details>
           <details><summary>意见处理与修改轨迹</summary><ul id="revision-trace"></ul></details>
           <details id="technical-accuracy-panel" hidden><summary>只读技术准确性核验</summary><p id="technical-accuracy-status"></p><ul id="technical-accuracy-issues"></ul></details>
-          <div id="full-revision-downloads" class="row links"></div>
+          <details><summary>下载 Diff、来源和完整审查记录</summary><div id="full-revision-downloads" class="row links"></div></details>
           <button id="refresh-revision" type="button" class="secondary">刷新修订结果</button>
+          <details id="advanced-acceptance"><summary>记录对确切版本的最终接受（可选）</summary>
           <label class="confirmation" for="accept-full-revision"><input id="accept-full-revision" type="checkbox" disabled><span>我已阅读完整修订稿、Diff 和核验结果，接受此版本。</span></label>
           <button id="finalize-revision" type="button" disabled>接受并保存最终全文</button>
           <div id="final-essay-downloads" class="row links" aria-live="polite"></div>
+          </details>
         </div>
       </section>
+      <details id="advanced-patches"><summary>局部修改审批（高级）</summary>
       <h2>逐项审批</h2>
       <p class="hint">只写入你勾选的合格修改。complete 表示处理完成，仍需核对待核事实和申请要求。</p>
       <div id="changes"></div>
       <button id="approve" type="button" disabled>批准所选修改并生成新稿</button>
       <div id="revision-downloads" class="row links" aria-live="polite"></div>
+      </details>
     </section>
   </div>
   <footer>文件与审稿记录由部署者保存在服务端；密钥留在服务端。</footer>

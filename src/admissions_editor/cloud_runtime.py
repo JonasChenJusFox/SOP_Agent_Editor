@@ -79,6 +79,8 @@ def revision_demo_payload(examples):
         value = json.loads((Path(examples) / "revision/demo.json").read_text())
         if not isinstance(value, dict) or not isinstance(value.get("input"), dict) or not isinstance(value.get("plan_input"), dict):
             raise ValueError("Invalid revision example")
+        from .editorial import demo_feedback
+        value["feedback"] = demo_feedback(value)
         return value
     except (OSError, ValueError):
         raise WebError(503, "此安装未包含完整改稿的离线示例。") from None
@@ -113,8 +115,15 @@ def next_action(inputs, mode, config, responses, examples, source=None, source_s
             run = enrich_run(run, workflow, manifest=inputs["claims"], source_metadata=inputs["sources"],
                              as_of=inputs["as_of"], max_rounds=context["max_rounds"])
         verify_run(run)
-        return {"complete": True, "run": run,
-                "artifacts": {name: raw.decode() for name, raw in review_artifacts(run).items()}}
+        artifacts = {name: raw.decode() for name, raw in review_artifacts(run).items()}
+        if config.get("editorial_reports") or mode == "demo":
+            from .editorial import build_editorial_report, render_editorial_report
+            report = build_editorial_report(run, sha256(artifacts["run.json"].encode()),
+                workflow if mode != "demo" else None,
+                generation_source="offline_fixture" if mode == "demo" else "offline_summary")
+            artifacts["editorial-report.json"] = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
+            artifacts["editorial-report.md"] = render_editorial_report(report)
+        return {"complete": True, "run": run, "artifacts": artifacts}
     except PendingCall as pending:
         return {"complete": False, **pending.action}
 
@@ -141,8 +150,23 @@ def next_revision_action(run, plan, config, responses, examples, mode="configure
         provider = TaskRoutedProvider({stage: ReplayOpenAI(settings, responses) for stage, settings in config["revision"].items()})
     try:
         record = revise_document(copy.deepcopy(run), copy.deepcopy(plan), provider)
-        return {"complete": True, "record": record,
-                "artifacts": {name: content.decode() for name, content in revision_artifacts(record).items()}}
+        artifacts = {name: content.decode() for name, content in revision_artifacts(record).items()}
+        if plan.get("editorial_context"):
+            artifacts["feedback-analysis.json"] = json.dumps(plan["editorial_context"], ensure_ascii=False, indent=2) + "\n"
+        return {"complete": True, "record": record, "artifacts": artifacts}
+    except PendingCall as pending:
+        return {"complete": False, **pending.action}
+
+
+def next_feedback_revision_action(run, run_sha256, report, body, config, responses, examples, mode="configured", knowledge_context=None):
+    """Interpret one global comment once, then replay the existing writing engine."""
+    from .editorial import prepare_feedback_plan
+    try:
+        planner = ReplayOpenAI(config["revision"]["sop_revise"], responses) if mode != "demo" else None
+        manifest = revision_demo_payload(examples) if mode == "demo" else None
+        plan = prepare_feedback_plan(run, run_sha256, report, body, planner,
+                                     knowledge_context=knowledge_context, demo_manifest=manifest)
+        return next_revision_action(run, plan, config, responses, examples, mode)
     except PendingCall as pending:
         return {"complete": False, **pending.action}
 

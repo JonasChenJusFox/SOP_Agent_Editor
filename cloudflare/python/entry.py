@@ -6,7 +6,7 @@ from pathlib import Path
 
 from workers import Response, WorkerEntrypoint, WorkflowEntrypoint, fetch
 
-from admissions_editor.cloud_runtime import next_action, next_revision_action
+from admissions_editor.cloud_runtime import next_action, next_revision_action, next_feedback_revision_action
 from admissions_editor.review import sha256
 from cloud_app import CloudApp, SECURITY, Store
 
@@ -58,7 +58,7 @@ class ReviewWorkflow(WorkflowEntrypoint):
                         return {"state": action["run"]["status"]}
                     return await publish()
                 call_id = action["call_id"]
-                labels = {"observe": "裁决第一阶段：独立观察", "decide": "裁决第二阶段：逐组决定"}
+                labels = {"observe": "裁决第一阶段：独立观察", "decide": "裁决第二阶段：逐组决定", "editorial_report": "生成综合建议报告"}
                 await store.update(job_id, "running", labels.get(call_id, "独立审稿：" + call_id))
 
                 @step.do("model-" + call_id + "-" + action["key"][:16],
@@ -91,12 +91,15 @@ class ReviewWorkflow(WorkflowEntrypoint):
                 await store.update(job_id, "failed", "来源审稿版本不符，请重新准备全文计划。")
                 return {"state": "failed"}
             run = json.loads(source_text)
-            plan = json.loads(job["input_json"])["plan"]
+            inputs = json.loads(job["input_json"])
+            plan = inputs.get("plan")
             config = json.loads(job["config_json"])
             responses = {}
             await store.update(job_id, "running", "准备作者确认的全文修改计划")
-            for _ in range(5):
-                action = next_revision_action(run, plan, config, responses, EXAMPLES, job["mode"])
+            for _ in range(6):
+                action = next_feedback_revision_action(run, job["source_sha"], inputs["editorial_report"],
+                    inputs["feedback_request"], config, responses, EXAMPLES, job["mode"], inputs.get("knowledge_context")) if "feedback_request" in inputs else \
+                    next_revision_action(run, plan, config, responses, EXAMPLES, job["mode"])
                 if action["complete"]:
                     @step.do("publish-full-revision", config={"retries": {"limit": 0, "delay": "1 second", "backoff": "constant"}, "timeout": "5 minutes"})
                     async def publish_revision():
@@ -107,7 +110,7 @@ class ReviewWorkflow(WorkflowEntrypoint):
                                 ("complete" if ready else "partial", "全文核验通过，请检查候选和 Diff 后接受" if ready else "全文候选有待处理项，请查看核验结果"))
                         return {"state": action["record"]["status"]}
                     return await publish_revision()
-                labels = {"sop_revise": "全文修订：结构与内容", "polish": "语言润色",
+                labels = {"feedback_plan": "解析整体评价并选择写作 skills", "sop_revise": "全文修订：结构与内容", "polish": "语言润色",
                           "humanize": "Humanizer：最后编辑", "verify_revision": "只读核验：技术含义、事实、要求与采纳覆盖"}
                 await store.update(job_id, "running", labels[action["call_id"]])
 

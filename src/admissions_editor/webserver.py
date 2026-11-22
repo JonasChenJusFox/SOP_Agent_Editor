@@ -25,6 +25,8 @@ from .workflow import WORKFLOW_PROMPT_VERSION, RuleWorkflowProvider, enrich_run,
 
 from .webinput import MAX_BODY, MAX_TEXT, WebError, normalize_input
 from .revision_web import prepare_web_plan, validate_web_plan, revision_result, finalize_web
+from .editorial import (build_editorial_report, validate_editorial_report, render_editorial_report,
+    validate_feedback_request, prepare_feedback_plan, feedback_result_fields)
 EXAMPLES = Path(__file__).resolve().parents[2] / "examples"
 STATIC = {"/": ("index.html", "text/html; charset=utf-8"),
           "/app.js": ("app.js", "text/javascript; charset=utf-8"),
@@ -63,6 +65,7 @@ class TrackedProvider:
 
     def task(self, task, payload, schema):
         names = {"observe": "裁决第一阶段：独立观察", "decide": "裁决第二阶段：逐组决定",
+                 "editorial_report": "生成综合建议报告", "feedback_plan": "解析整体评价并选择写作 skills",
                  "sop_revise": "全文修订：结构与内容", "polish": "语言润色", "humanize": "Humanizer：最后编辑", "verify_revision": "只读核验：技术含义、事实、要求与采纳覆盖"}
         self.app.update(self.job_id, stage=names.get(task, "检查中"))
         return self.provider.task(task, payload, schema)
@@ -208,6 +211,14 @@ class WebApp:
                 run = enrich_run(run, workflow, manifest=inputs["claims"], source_metadata=inputs["sources"],
                                  as_of=inputs["as_of"], max_rounds=context["max_rounds"])
             write_review(self.root / job_id / "review", run)
+            source_sha = sha256((self.root / job_id / "review/run.json").read_bytes())
+            report = build_editorial_report(run, source_sha,
+                workflow if mode != "demo" and str(workflow.label).startswith("openai:") else None,
+                generation_source="offline_fixture" if mode == "demo" else "offline_summary")
+            private_json(self.root / job_id / "review/editorial-report.json", report)
+            report_path = self.root / job_id / "review/editorial-report.md"
+            report_path.write_text(render_editorial_report(report))
+            report_path.chmod(0o600)
             self.update(job_id, state=run["status"], stage="审稿完成" if run["status"] == "complete" else "部分步骤未完成，请查看诊断")
         except Exception as error:
             self.update(job_id, state="failed", stage=f"任务未完成（{type(error).__name__}），请检查服务端配置。")
@@ -238,6 +249,7 @@ class WebApp:
                 record = json.loads((folder / "revision.json").read_text())
                 names = [str(path.relative_to(folder)) for path in folder.rglob("*") if path.is_file()]
                 job["result"] = revision_result(record, job["source_id"], names)
+                job["result"].update(feedback_result_fields(record))
             return job
         if job["state"] in {"complete", "partial"}:
             run = self.read_run(job_id)
@@ -245,6 +257,7 @@ class WebApp:
             job["result"]["run_sha256"] = sha256((self.root / job_id / "review/run.json").read_bytes())
             job["result"]["reviewers"] = {role: {"status": r["status"], "diagnostics": r["diagnostics"]} for role, r in run["reviewers"].items()}
             job["result"]["knowledge_context"] = run["snapshot"].get("knowledge_context")
+            job["result"]["editorial_report"] = self.editorial_report(job_id)
         return job
 
     def approve(self, job_id, body):
@@ -281,6 +294,17 @@ class WebApp:
         context = self.knowledge(run["snapshot"]["draft"], demo=self.job(review_id)["mode"] == "demo")
         return prepare_web_plan((self.root / review_id / "review/run.json").read_text(), body, knowledge_context=context)
 
+    def editorial_report(self, review_id):
+        run = self.read_run(review_id)
+        source_sha = sha256((self.root / review_id / "review/run.json").read_bytes())
+        path = self.root / review_id / "review/editorial-report.json"
+        if not path.is_file():
+            return build_editorial_report(run, source_sha)
+        try:
+            return validate_editorial_report(run, source_sha, json.loads(path.read_text()))
+        except (ValueError, KeyError, TypeError):
+            raise WebError(409, "综合报告与当前审稿不符，请重新审稿。") from None
+
     def submit_revision(self, review_id, body):
         self.read_run(review_id)
         source_text = (self.root / review_id / "review/run.json").read_text()
@@ -290,18 +314,35 @@ class WebApp:
             raise WebError(503, "服务端尚未配置全文改稿模型，请检查 revision 配置和环境变量。")
         if sha256((self.root / review_id / "draft.txt").read_bytes()) != plan["draft_sha256"]:
             raise WebError(409, "原稿已经改变，请重新审稿后再生成全文。")
+        return self.queue_revision(review_id, source_text, {"plan": plan})
+
+    def submit_feedback_revision(self, review_id, body):
+        run = self.read_run(review_id)
+        source_text = (self.root / review_id / "review/run.json").read_text()
+        report = self.editorial_report(review_id)
+        normalized = validate_feedback_request(source_text, report, body)
+        if self.job(review_id)["mode"] != "demo" and not self.configured_revision_available:
+            raise WebError(503, "服务端尚未配置全文改稿模型。")
+        if sha256((self.root / review_id / "draft.txt").read_bytes()) != run["draft_sha256"]:
+            raise WebError(409, "原稿已经改变，请重新审稿后再生成全文。")
+        context = self.knowledge(run["snapshot"]["draft"], demo=self.job(review_id)["mode"] == "demo")
+        self.assert_knowledge_current(context)
+        return self.queue_revision(review_id, source_text,
+            {"feedback_request": normalized, "editorial_report": report, "knowledge_context": context})
+
+    def queue_revision(self, review_id, source_text, inputs):
         with self.lock:
             if sum(job["state"] not in TERMINAL for job in self.jobs.values()) >= 4:
                 raise WebError(429, "已有任务运行，请稍后再试。")
             job_id = secrets.token_hex(16)
             folder = self.root / job_id
             folder.mkdir(mode=0o700)
-            private_json(folder / "input.json", {"plan": plan})
+            private_json(folder / "input.json", inputs)
             self.jobs[job_id] = {"id": job_id, "kind": "revision", "mode": self.jobs[review_id]["mode"],
                                  "source_id": review_id, "source_sha": sha256(source_text.encode()),
                                  "state": "queued", "stage": "等待全文修订", "created_at": datetime.now().astimezone().isoformat()}
             self.update(job_id)
-            self.executor.submit(self.execute_revision, job_id, plan)
+            self.executor.submit(self.execute_revision, job_id, inputs.get("plan"))
         return {"id": job_id, "state": "queued"}
 
     def execute_revision(self, job_id, plan):
@@ -310,14 +351,24 @@ class WebApp:
         try:
             job = self.job(job_id)
             source = self.read_run(job["source_id"], job["source_sha"])
-            self.assert_knowledge_current(plan.get("knowledge_context"))
             if job["mode"] == "demo":
                 provider = FixtureProvider(self.examples / "revision" / "fixtures")
             else:
                 provider = revision_provider(self.config)
+            if plan is None:
+                inputs = json.loads((self.root / job_id / "input.json").read_text())
+                planner = provider.providers["sop_revise"] if hasattr(provider, "providers") else None
+                planner = planner if planner and str(planner.label).startswith("openai:") else None
+                plan = prepare_feedback_plan(source, job["source_sha"], inputs["editorial_report"], inputs["feedback_request"],
+                    TrackedProvider(planner, self, job_id) if planner else None,
+                    knowledge_context=inputs.get("knowledge_context"), demo_manifest=self.revision_demo() if planner is None else None)
+            self.assert_knowledge_current(plan.get("knowledge_context"))
             self.update(job_id, state="running", stage="准备作者确认的全文修改计划")
             record = revise_document(source, plan, TrackedProvider(provider, self, job_id))
-            publish_directory(self.root / job_id / "revision", revision_artifacts(record))
+            artifacts = revision_artifacts(record)
+            if plan.get("editorial_context"):
+                artifacts["feedback-analysis.json"] = json_bytes(plan["editorial_context"])
+            publish_directory(self.root / job_id / "revision", artifacts)
             self.update(job_id, state="complete" if record["status"] == "ready" else "partial",
                         stage="全文核验通过，请检查候选和 Diff 后接受" if record["status"] == "ready" else "全文候选有待处理项，请查看核验结果")
         except Exception as error:
@@ -480,6 +531,15 @@ class WebHandler(BaseHTTPRequestHandler):
                 return self.json(200, {"plan": self.app.revision_plan(job_id, self.body() if post else None)})
             if post and parts[3:] == ["revisions"]:
                 return self.json(202, self.app.submit_revision(job_id, self.body()))
+            if post and parts[3:] == ["feedback-revisions"]:
+                return self.json(202, self.app.submit_feedback_revision(job_id, self.body()))
+            if not post and parts[3:] == ["editorial-report"]:
+                return self.json(200, {"editorial_report": self.app.editorial_report(job_id)})
+            if not post and parts[3:] == ["documents", "editorial-report.docx"]:
+                from .word_documents import DOCX_MIME, editorial_document
+                source_text = (self.app.root / job_id / "review/run.json").read_text()
+                return self.send_content(200, editorial_document(self.app.editorial_report(job_id), json.loads(source_text), sha256(source_text.encode())), DOCX_MIME,
+                    {"Content-Disposition": 'attachment; filename="editorial-report.docx"'})
             if not post and len(parts) > 4 and parts[3] == "files":
                 file = self.app.artifact(job_id, "/".join(parts[4:]))
                 mime = "application/json; charset=utf-8" if file.suffix == ".json" else "text/plain; charset=utf-8"
@@ -492,6 +552,11 @@ class WebHandler(BaseHTTPRequestHandler):
                 return self.json(200, self.app.summary(job_id))
             if post and parts[3:] == ["finalize"]:
                 return self.json(201, self.app.finalize_full_revision(job_id, self.body()))
+            if not post and len(parts) == 5 and parts[3] == "documents" and parts[4] in {"essay.docx", "change-report.docx"}:
+                from .word_documents import DOCX_MIME, revision_document
+                record_path = self.app.artifact(job_id, "revision/revision.json")
+                return self.send_content(200, revision_document(json.loads(record_path.read_text()), parts[4]), DOCX_MIME,
+                    {"Content-Disposition": 'attachment; filename="' + parts[4] + '"'})
             if not post and len(parts) > 4 and parts[3] == "files":
                 relative = "/".join(parts[4:])
                 file = self.app.artifact(job_id, relative if relative.startswith("outputs/") else "revision/" + relative)

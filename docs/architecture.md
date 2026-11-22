@@ -1,5 +1,13 @@
 # 申请文书 Agent 构建方案
 
+当前网页默认采用“综合报告 → 整体评价 → 优化文章与修改报告 Word”。四位 Reviewer
+仍独立读取原始快照；综合模型在独立审稿完成后读取 findings，按主题编号归并。
+反馈模型将一次评价映射到内部修改决定、精确引用的作者回答和本地 skills 选择，
+绑定审稿、报告与反馈摘要，再复用三阶段写作及只读核验。`editorial.py` 负责新
+契约，`word_documents.py` 从已校验记录生成 OOXML。Cloudflare 仍在现有 D1 保存
+文本，下载时生成二进制，无新迁移。逐项操作默认折叠，旧 CLI 与高级审批保留。
+接口与验证见 [整体评价改稿手册](feedback.md)。
+
 本机默认知识库通过 `knowledge_sources.py` 读取 `knowledge.toml`，
 `knowledge.py` 只读 Git tracked 文件或显式授权导出，SQLite 缓存位于
 `private/knowledge/index.sqlite3`，Schema 见 `knowledge.schema.sql`。

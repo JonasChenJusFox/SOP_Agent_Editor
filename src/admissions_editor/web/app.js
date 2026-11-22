@@ -25,7 +25,7 @@ function requireLogin() {
   form.hidden = false;
   form.classList.toggle("reauthenticate", authState.expired);
   message.hidden = !authState.expired;
-  message.textContent = authState.expired ? "登录已失效，请重新输入访问密码。本页已填写的原稿、逐项决定和补充材料仍保留；登录后请再次点击刚才的操作。" : "";
+  message.textContent = authState.expired ? "登录已失效，请重新输入访问密码。本页已填写的原稿、整体评价和补充材料仍保留；登录后请再次点击刚才的操作。" : "";
   byId("login-button").textContent = authState.expired ? "重新登录" : "登录";
   refreshApproval();
   if (authState.expired) {
@@ -290,7 +290,8 @@ function renderResult(job) {
   state.result = result;
   byId("results").hidden = false;
   byId("run-status").textContent = result.status === "complete" ? "流程完成" : "部分完成 · 审批暂停";
-  byId("version-note").textContent = "以下意见与审批绑定本次提交的原稿版本。";
+  byId("version-note").textContent = "综合报告对应本次原稿。阅读后在下方留下整体评价，即可生成优化文章和修改说明。";
+  renderEditorialReport(result.editorial_report, job.id);
   const coverage = byId("coverage");
   coverage.replaceChildren();
   for (const [role, record] of Object.entries(result.reviewers)) coverage.append(element("li", `${labels[role]}：${record.status === "complete" ? "完成" : "待处理"}`));
@@ -372,7 +373,7 @@ async function watchJob(jobId, restoring = false) {
       setBusy(false);
       authState.activePoll = null;
       renderResult(job);
-      notice(job.state === "complete" ? "审稿完成，请阅读意见并选择要批准的修改。" : "审稿部分完成，已保留结果，请查看诊断。", job.state === "partial");
+      notice(job.state === "complete" ? "综合审稿已完成，请阅读报告并填写整体评价。" : "审稿部分完成，已保留结果，请展开审稿记录查看诊断。", job.state === "partial");
     } else if (job.state === "failed") {
       setBusy(false);
       authState.activePoll = null;
@@ -428,7 +429,7 @@ byId("load-revision-demo").addEventListener("click", async () => {
     byId("as-of").value = input.as_of;
     state.evidence = input.evidence; state.mode = "demo"; state.dirty = true; state.revisionDemo = sample;
     revisionChanged(); renderEvidence(); refreshMode(); refreshApproval();
-    notice("已加载虚构全文改稿示例。先开始审稿，随后检查示例决定、准备计划并生成完整版；不调用真实模型。");
+    notice("已加载虚构全文改稿示例。先开始审稿，再阅读综合报告和示例评价，生成文章与修改说明；不调用真实模型。");
   } catch (error) { notice(error.message, true); }
 });
 
@@ -466,6 +467,29 @@ function revisionChanged() {
   if (revisionState.plan) byId("revision-plan-note").textContent = "决定或补充材料已更新，请重新准备修订计划。";
   if (revisionState.result) byId("full-revision-version-note").textContent = "输入或修订决定已变化，下面保留旧候选供比较，不能接受为最终稿。";
   refreshFullRevision();
+}
+
+function renderEditorialReport(report, reviewId) {
+  const summary = byId("editorial-summary"), issues = byId("editorial-issues"), source = byId("editorial-source");
+  issues.replaceChildren(); byId("editorial-downloads").replaceChildren();
+  if (!report) {
+    summary.textContent = "本次记录尚无综合报告。可先查看审查细节，或重新审稿以生成综合报告。";
+    source.textContent = "";
+    return;
+  }
+  summary.textContent = report.summary || "请阅读以下综合建议，并在下方填写你的整体评价。";
+  for (const issue of Array.isArray(report.issues) ? report.issues : []) {
+    const item = element("li");
+    item.append(element("h3", issue.title || "修改建议"));
+    if (issue.problem) item.append(element("p", issue.problem));
+    if (issue.recommendation) item.append(element("p", "建议：" + issue.recommendation));
+    issues.append(item);
+  }
+  if (!issues.children.length) issues.append(element("li", "本轮没有需要集中处理的问题。仍可在评价中说明你希望优化的方向。"));
+  const provenance = report.generation_source || report.source;
+  const offline = typeof provenance === "string" && /offline|fixture|rule/.test(provenance);
+  source.textContent = offline ? "离线综合摘要 · 来自保存的审稿意见，不代表真实模型质量评估。" : "独立审稿意见已合并为本报告；建议和你的评价不会被当作事实证明。";
+  if (report.report_sha256) download(byId("editorial-downloads"), "下载综合建议报告（Word）", `/api/reviews/${reviewId}/documents/editorial-report.docx`);
 }
 
 function revisionFindings() {
@@ -524,6 +548,11 @@ function resetFullRevision(job) {
   byId("revision-sample").value = "";
   byId("revision-sample-note").textContent = "";
   byId("revision-word-limit").value = "";
+  byId("editorial-feedback").value = "";
+  byId("feedback-note").textContent = job.result.status === "complete" ? "可以按报告编号说出你的想法，也可以直接描述整体修改方向。只将你明确说明的真实情况作为补充事实。" : "本轮审稿尚未完成，请先展开审稿记录恢复失败步骤。";
+  byId("word-downloads").replaceChildren();
+  byId("revision-change-summary").replaceChildren();
+  byId("revision-skills").textContent = "";
   byId("revision-essay-type").value = "sop";
   byId("revision-plan-note").textContent = job.result.status === "complete" ? "请逐项决定，然后准备修订计划。" : "本轮审稿尚未完整完成，请先恢复裁决或重新审稿。";
   byId("revision-plan-blockers").replaceChildren();
@@ -542,6 +571,7 @@ function resetFullRevision(job) {
     byId("revision-essay-type").value = input.essay_type || "sop";
     byId("revision-word-limit").value = input.word_limit || "";
     byId("revision-sample").value = input.writing_sample || "";
+    byId("editorial-feedback").value = demo.feedback || "";
     byId("revision-plan-note").textContent = "已填入虚构示例的作者决定和确认材料。请先检查，再准备修订计划；尚未自动生成或接受全文。";
   }
 }
@@ -607,9 +637,9 @@ function addFactCitation(container, value = null) {
   row.append(sourceLabel, quoteLabel, remove); container.append(row);
 }
 
-function revisionForm() {
+function revisionForm(includeDecisions = true) {
   const decisions = [], answers = {}, confirmed_facts = [], glossary = [];
-  for (const card of byId("revision-decisions").querySelectorAll("[data-finding-id]")) {
+  if (includeDecisions) for (const card of byId("revision-decisions").querySelectorAll("[data-finding-id]")) {
     const finding_id = card.dataset.findingId;
     const reason = card.querySelector(".finding-reason").value.trim();
     if (!reason) throw new Error(`请填写 ${finding_id} 的决定理由，包括暂缓的原因。`);
@@ -807,6 +837,8 @@ function refreshFullRevision() {
   byId("revision-inputs").disabled = locked;
   byId("prepare-revision").disabled = locked || !authState.authenticated;
   byId("generate-revision").disabled = locked || !authState.authenticated || revisionState.planDirty || !revisionState.plan?.plan_sha256;
+  byId("generate-feedback-revision").disabled = locked || !authState.authenticated || !state.result?.editorial_report?.report_sha256 || !byId("editorial-feedback").value.trim();
+  byId("word-downloads").hidden = state.dirty || revisionState.planDirty || working;
   const result = revisionState.result;
   const verified = result?.status === "ready" && result.validation?.passed === true && !revisionBlockers(result).length && candidateMatchesReview(result) &&
     Boolean(result.candidate_sha256 && result.plan_sha256 && (result.candidate_text || result.candidate));
@@ -837,7 +869,11 @@ async function renderFullRevision(job, restoring = false) {
   byId("full-revision-output").hidden = false;
   byId("accept-full-revision").checked = false;
   byId("final-essay-downloads").replaceChildren();
-  if (restoring && result.plan) renderPlan(result.plan, true);
+  if (result.plan && (restoring || !revisionState.plan)) renderPlan(result.plan, restoring);
+  if (restoring) {
+    const feedback = result.feedback ?? result.feedback_analysis?.feedback ?? result.plan?.editorial_context?.feedback;
+    if (typeof feedback === "string") byId("editorial-feedback").value = feedback;
+  }
   const legacy = result.legacy_read_only || result.requires_replan;
   if (legacy) revisionState.planDirty = true;
   const candidate = result.candidate_text || result.candidate || "";
@@ -852,6 +888,7 @@ async function renderFullRevision(job, restoring = false) {
   renderRevisionRecovery(result, display);
   byId("revision-candidate").textContent = candidate;
   byId("revision-candidate").hidden = !candidate;
+  renderWordOutputs(job, result, ready, legacy);
   byId("revision-diff-panel").hidden = !candidate;
   byId("revision-diff").textContent = candidate ? "正在加载全文 Diff…" : "";
   const links = byId("full-revision-downloads"); links.replaceChildren();
@@ -873,6 +910,28 @@ async function renderFullRevision(job, restoring = false) {
     catch (error) { byId("revision-diff").textContent = error.message; notice(error.message, true); }
   }
   refreshFullRevision();
+}
+
+function renderWordOutputs(job, result, ready, legacy) {
+  const links = byId("word-downloads"), summary = byId("revision-change-summary");
+  links.replaceChildren(); summary.replaceChildren();
+  const candidate = result.candidate_text || result.candidate;
+  if (candidate && !legacy && job.result) {
+    download(links, ready ? "下载优化文章（Word）" : "下载候选文章（Word，待核验）", `/api/revisions/${job.id}/documents/essay.docx`);
+    download(links, "下载修改说明（Word）", `/api/revisions/${job.id}/documents/change-report.docx`);
+  }
+  byId("word-downloads-note").textContent = legacy ? "历史候选仅供查看。请使用上方整体评价重新生成当前版本的 Word 文档。" : ready ? "两份 Word 文档分别保存完整优化文章和修改说明。请核对内容后使用。" : candidate ? "目前只能下载候选文章和核验记录；文档会标明待处理项，不能视为已完成的最终稿。" : "生成完成后，这里提供文章和修改说明两份 Word 文档。";
+  const selected = result.selected_skill_ids || result.feedback_analysis?.selected_skill_ids || result.plan?.editorial_context?.selected_skill_ids || [];
+  const names = {"sop_reviser": "SOP Reviser", "sop-reviser": "SOP Reviser", "sop_revise": "SOP Reviser", "language_polisher": "Language Polisher", "language-polisher": "Language Polisher", "polish": "Language Polisher", "humanizer": "Humanizer", "humanize": "Humanizer", "general_writing": "General Writing", "general-writing": "General Writing"};
+  byId("revision-skills").textContent = selected.length ? "使用的写作指引：" + selected.map((id) => names[id] || id).join(" → ") : "处理顺序：全文修改 → 语言润色 → Humanizer → 只读核验。";
+  const changes = result.change_report || result.change_summary;
+  if (typeof changes?.summary === "string") summary.append(element("p", changes.summary));
+  const items = Array.isArray(changes?.changes) ? changes.changes : Array.isArray(changes) ? changes : [];
+  if (items.length) {
+    const list = element("ol");
+    for (const item of items) list.append(element("li", typeof item === "string" ? item : [item.title, item.summary || item.description || item.reason].filter(Boolean).join("：")));
+    summary.append(list);
+  }
 }
 
 function renderRevisionTrace(result) {
@@ -975,6 +1034,27 @@ byId("prepare-revision").addEventListener("click", async () => {
     notice("修订计划已准备，请检查采纳范围与待补信息，再生成完整文章。");
   } catch (error) { notice(error.message, true); }
   finally { revisionState.pending = false; refreshApproval(); }
+});
+
+byId("generate-feedback-revision").addEventListener("click", async () => {
+  if (!ensureAuthenticated()) return;
+  if (state.busy || state.reading || state.dirty || state.result?.status !== "complete") return;
+  try {
+    const feedback = byId("editorial-feedback").value.trim();
+    if (!feedback) throw new Error("请先填写你对综合报告的评价或修改要求。");
+    const reportHash = state.result.editorial_report?.report_sha256;
+    if (!reportHash) throw new Error("本次综合报告尚未准备好，请先完成审稿。");
+    const {decisions: ignoredDecisions, answers: ignoredAnswers, ...options} = revisionForm(false);
+    const body = {...options, editorial_report_sha256: reportHash, feedback};
+    if (new TextEncoder().encode(JSON.stringify(body)).length > state.config.max_body_bytes) throw new Error("评价或补充材料超过 512 KB，请精简后重试。");
+    setBusy(true); byId("progress-section").hidden = false;
+    byId("progress-text").textContent = "解析整体评价并准备修改";
+    byId("full-revision-stage").textContent = "正在理解整体评价、选择写作 skills 并生成文章";
+    const job = await api(`/api/reviews/${state.job}/feedback-revisions`, body);
+    revisionState.plan = null; revisionState.planDirty = true; revisionState.accepted = false;
+    byId("accept-full-revision").checked = false;
+    await watchRevision(job.id);
+  } catch (error) { setBusy(false); notice(error.message, true); }
 });
 
 byId("generate-revision").addEventListener("click", async () => {

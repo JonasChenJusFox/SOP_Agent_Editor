@@ -1,6 +1,7 @@
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import mammoth from "mammoth/mammoth.browser.js";
 import {unzipSync} from "fflate";
+import {docxHtmlParagraphs, reconstructPdfPage, reconstructPdfPages} from "./document-paragraphs.js";
 
 export const LIMITS = Object.freeze({sourceBytes: 10 * 1024 * 1024, textBytes: 128 * 1024, pages: 50, zipEntries: 2048, zipBytes: 32 * 1024 * 1024, xmlBytes: 4 * 1024 * 1024});
 
@@ -32,23 +33,6 @@ function checkDocxArchive(bytes) {
   if (!names.has("word/document.xml") || !names.has("[Content_Types].xml")) throw new DocumentError("请选择有效的 Word .docx 文件。");
 }
 
-function pageText(items) {
-  let text = "", previous = null;
-  for (const item of items) {
-    if (typeof item.str !== "string") continue;
-    if (item.str && previous && text && !/\s$/.test(text) && !/^\s/.test(item.str)) {
-      const sameLine = Math.abs(item.transform[5] - previous.transform[5]) < Math.max(1, item.height / 2);
-      const gap = item.transform[4] - previous.transform[4] - previous.width;
-      if (!sameLine) text += "\n";
-      else if (gap > Math.max(1, item.height * .12)) text += " ";
-    }
-    text += item.str;
-    if (item.hasEOL && !text.endsWith("\n")) text += "\n";
-    if (item.str) previous = item;
-  }
-  return text.trim();
-}
-
 async function pdfText(bytes, maxBytes) {
   let port, worker, loading;
   const warnings = [];
@@ -72,14 +56,16 @@ async function pdfText(bytes, maxBytes) {
     let size = 0;
     for (let number = 1; number <= pdf.numPages; number++) {
       const page = await pdf.getPage(number);
-      const text = pageText((await page.getTextContent()).items);
+      const layout = reconstructPdfPage((await page.getTextContent()).items);
+      const text = reconstructPdfPages([layout]);
       size += new TextEncoder().encode(text).length + (pages.length ? 2 : 0);
       if (size > maxBytes) throw new DocumentError("提取的文字超过 128 KB，请拆分 PDF 后重试。");
       if (!text) warnings.push(`第 ${number} 页未提取到文字，请核对是否包含扫描图像。`);
-      pages.push(text);
+      warnings.push(...layout.warnings.map(warning => `第 ${number} 页：${warning}`));
+      pages.push(layout);
       page.cleanup();
     }
-    return {text: checkedText(pages.join("\n\n"), maxBytes), warnings, pages: pdf.numPages, format: "pdf"};
+    return {text: checkedText(reconstructPdfPages(pages), maxBytes), warnings, pages: pdf.numPages, format: "pdf"};
   } finally {
     await loading?.destroy().catch(() => {});
     worker?.destroy();
@@ -94,8 +80,11 @@ export async function extractDocument(buffer, name, maxBytes = LIMITS.textBytes)
     if (/\.pdf$/i.test(name)) return await pdfText(bytes, maxBytes);
     if (/\.docx$/i.test(name)) {
       checkDocxArchive(bytes);
-      const result = await mammoth.extractRawText({arrayBuffer: buffer});
-      return {text: checkedText(result.value, maxBytes), format: "docx", warnings: []};
+      // Read semantic paragraphs instead of turning Shift+Enter into a new
+      // paragraph. Images are intentionally not read or expanded into data URIs.
+      const result = await mammoth.convertToHtml({arrayBuffer: buffer}, {convertImage: () => []});
+      const warnings = /<table\b/i.test(result.value) ? ["Word 表格按行提取，单元格用制表符分隔；请核对表格内容。"] : [];
+      return {text: checkedText(docxHtmlParagraphs(result.value), maxBytes), format: "docx", warnings};
     }
     if (/\.doc$/i.test(name)) throw new DocumentError("旧版 .doc 请先用 Word 另存为 .docx 后上传。");
     throw new DocumentError("请选择 PDF 或 Word .docx 文件。");

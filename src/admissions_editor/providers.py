@@ -161,6 +161,9 @@ class OpenAIProvider:
         if revision_task:
             from .editorial_skills import load_editorial_skill
             instructions = load_editorial_skill(task)["instructions"]
+        elif task in {"editorial_report", "feedback_plan"}:
+            from .editorial import TASK_RULES
+            instructions = TASK_RULES[task]
         elif task in rules:
             instructions = rules[task]
         else:

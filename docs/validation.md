@@ -560,3 +560,48 @@ backend、retrieved/retrieval 未进入技术来源；界面贡献的前置分�
 作者可以重新打开原 `#revision=...` 链接，核对恢复的回答，再点击“准备修订计划”
 和“按计划生成完整文章”；不必重新提交四角色审稿。准备计划不调用模型，生成
 文章会按原在线配置调用模型。
+
+## 整体评价、段落解析与两份 Word（2026-11-22）
+
+默认网页流程改为“综合建议 → 一次整体评价 → 文章和修改报告 Word”，旧逐项决定
+与审批保留在折叠的高级区。综合报告由完成独立审稿后的模型按主题编号归并；反馈
+模型匹配打包的 SOP Reviser、Language Polisher、Humanizer，生成绑定原审稿、
+综合报告和评论摘要的内部计划，再复用原有写作与技术核验。相关源码为
+`editorial.py`、`revision.py`、`cloud_runtime.py`、本地和云端 API。
+
+`document-paragraphs.js` 与解析 Worker 按 PDF 基线、行距、缩进、字号重建段落；
+DOCX 使用真实段落，合并手动续行，保留标题、列表、中文、技术连字符和表格行。
+无结构的 PDF 仍依赖版式推断，分栏/表格有核对提示。扫描件仍需 OCR。
+
+`word_documents.py` 在服务端从已校验的存储记录生成真正 `.docx`，保持完整文章
+段落；修改报告提供评价、解释、匹配技能、修改前后、来源及待核验事项。文件绑定
+候选与计划摘要，不从下载请求接受任意正文。未通过的文档内部清楚标为候选。
+不新增服务、运行依赖、数据库 Schema 或迁移，不上传新 Secret。
+
+| 实际执行 | 结果与产物 |
+| --- | --- |
+| `python -m unittest discover -s tests -v` | 253 项通过，含新综合/评论、HTTP/D1、Word、原有技术与版本测试；`runs/verification/feedback-python-tests-release.log` |
+| `node --test tests/frontend.test.js tests/documents.test.js tests/worker.test.js` | 78 项通过：前端 51、解析 20、Worker 7；`runs/verification/feedback-node-tests-release.log` |
+| 本机 `feedback_smoke.py --url http://127.0.0.1:8768 --out runs/feedback-local-smoke-2026-11-22` | 一次整体评价、四阶段 ready、两份 Word、过期报告拒绝、原稿不变；0 模型调用 |
+| 本机 `feedback_ui_smoke.mjs` | 实际 HTTP + JSDOM，从默认页面走完新流程；无需逐项决定，高级面板折叠；`runs/verification/feedback-ui-http.json` |
+| Word 导出后重新导入 | 实际解析 Worker 的源模块回读文章与修改报告，文章 4 段且正文逐字一致，报告保留编号；`runs/verification/feedback-word-roundtrip.json` |
+| 仓库 skill | 使用 skill-creator 更新 admissions-revision 并经 quick_validate.py 验证有效；全局 skills 未修改 |
+| 真实模型两个新任务 | 1 份固定合成素材、2 次尝试共 4 个请求。报告生成成功，反馈验证暴露声明标题、多段引文与学习目标误判；修复后缓存的真实输出离线回放通过，无重复付费调用 |
+| 真实输出回放 | `feedback_model_smoke.py --replay runs/feedback-real-model-2026-11-22-final --out runs/feedback-model-replay-2026-11-22`：4 组报告、5 个完整决定、2 个确认回答，计划完整性通过，0 新调用；保留 1 个未决问题，未宣称真实文章完成核验 |
+| Cloudflare check/deploy | 版本 `ef03dfb2-9984-4614-b113-a4700aaa7e57`；`runs/verification/feedback-cloud-check-release.log` / `feedback-cloud-deploy.log` |
+| 云端 `feedback_smoke.py` | 同一 live URL 与 password 参数，输出 `runs/feedback-cloud-smoke-2026-11-22`；ready、两份二进制 Word 下载、技术核验、过期拒绝通过，合成来源、0 模型调用 |
+| 云端实际页面 + JSDOM | `feedback_ui_smoke.mjs --url <live URL> --password-file private/web-password.txt --out runs/verification/feedback-cloud-ui-http.json`：报告、一次反馈、两份 Word、输入恢复和高级区折叠通过；非视觉验收 |
+| 精确部署解析器 | `verify_cloud_documents.mjs <live URL>`：HTTPS 解析 bundle、PDF Worker、字体/CMaps 与本地摘要相符；用下载的生产 bundle 实际解析合成 PDF/DOCX，中文和数字通过；`runs/verification/feedback-deployed-parser.log` |
+| 进入 Git 的文件 | 全部候选文件扫描未包含本机 Key、网站密码、`private/`、`runs/` 或工具依赖；合成样例之外的申请材料未纳入提交 |
+
+两次实际模型尝试的记录分别保存在
+`runs/feedback-real-model-2026-11-22-first-attempt/validation.json` 和
+`runs/feedback-real-model-2026-11-22-final/`，后者保留固定合成输入对应的模型输出及
+token 用量，便于离线复现。没有向真实模型发送私人文稿，也没有进行新一轮真实
+Reviewer 或完整真人文稿改写。上述数量是运行与回归证据，不是人工质量指标。
+
+Word ZIP、XML、样式、真实编号、正文与解析回读已经验证。本机缺少 LibreOffice，
+`render_docx.py` 无法执行逐页渲染；相关错误记录在
+`runs/verification/feedback-docx-render.log`。结构和 DOM 检查不冒充 Word 页面的
+视觉验收。用户使用步骤与可复制命令见 [feedback.md](feedback.md)，live app
+链接位于 README 开头。

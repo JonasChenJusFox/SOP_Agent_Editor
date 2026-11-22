@@ -138,10 +138,15 @@ def _knowledge_changes(previous, current):
 
 
 def prepare_revision_plan(run, review_sha256, decisions=None, confirmed_facts=None, answers=None,
-                          essay_type="sop", writing_sample="", word_limit=None, glossary=None, knowledge_context=None):
+                          essay_type="sop", writing_sample="", word_limit=None, glossary=None, knowledge_context=None,
+                          editorial_context=None):
     verify_run(run)
     if not isinstance(review_sha256, str) or not re.fullmatch(r"[a-f0-9]{64}", review_sha256):
         raise ValueError("Plan requires the SHA-256 of the reviewed run.json bytes.")
+    if editorial_context is not None:
+        from .editorial import answers_from_excerpts, validate_editorial_context
+        validate_editorial_context(editorial_context, review_sha256)
+        editorial_context = copy.deepcopy(editorial_context)
     if essay_type not in {"sop", "personal_statement", "short_answer"}:
         raise ValueError("essay_type must be sop, personal_statement or short_answer.")
     if not isinstance(writing_sample, str) or "\0" in writing_sample or len(writing_sample.encode()) > MAX_ESSAY_BYTES:
@@ -167,6 +172,13 @@ def prepare_revision_plan(run, review_sha256, decisions=None, confirmed_facts=No
     if not isinstance(answers, dict) or set(answers) - by_id.keys() or any(not isinstance(v, str) or not v.strip() or "\0" in v or len(v.encode()) > MAX_ESSAY_BYTES for v in answers.values()):
         raise ValueError("Applicant answers must be nonempty confirmed text keyed by known finding IDs.")
     answers = {k: v.strip() for k, v in answers.items()}
+    if editorial_context is not None:
+        interpretation = editorial_context["interpretation"]
+        mapped = {row["finding_id"]: {"decision": row["decision"], "reason": row["reason"].strip()}
+                  for row in interpretation["decisions"]}
+        quoted_answers = answers_from_excerpts(interpretation["answer_excerpts"])
+        if mapped != decided or quoted_answers != answers:
+            raise ValueError("Global feedback interpretation differs from the revision decisions or confirmed answers.")
     knowledge_context = validate_knowledge_context(knowledge_context if knowledge_context is not None else
                                                    run["snapshot"].get("knowledge_context"))
     revision_snapshot = _revision_snapshot(run, knowledge_context)
@@ -205,6 +217,8 @@ def prepare_revision_plan(run, review_sha256, decisions=None, confirmed_facts=No
                 blockers.append(f"{left['finding_id']} 与 {right['finding_id']} 的获准替换冲突。")
     pending.extend(f"请作者确认素材 {fact_id}，未确认正文不会送入模型。" for fact_id in unconfirmed)
     pending.extend(f"{fact['id']}: 项目信息需要可复读的官方证据片段。" for fact in facts if fact["kind"] == "program_info" and not fact["citations"])
+    if editorial_context is not None:
+        pending.extend("整体评价：" + question for question in editorial_context["interpretation"]["unresolved_questions"])
     plan = {"schema_version": REVISION_VERSION, "review_sha256": review_sha256,
             "review_content_sha256": fingerprint(run), "draft_sha256": run["draft_sha256"],
             "input_sha256": run["input_sha256"], "evidence_sha256": copy.deepcopy(run["evidence_sha256"]),
@@ -219,6 +233,8 @@ def prepare_revision_plan(run, review_sha256, decisions=None, confirmed_facts=No
             "unconfirmed_fact_ids": unconfirmed, "protected_quotes": protected,
             "blockers": list(dict.fromkeys(blockers)), "unresolved_questions": list(dict.fromkeys(pending)),
             "skills": _manifest()}
+    if editorial_context is not None:
+        plan["editorial_context"] = editorial_context
     return _seal(plan, "plan_sha256")
 
 
@@ -236,7 +252,7 @@ def validate_revision_plan(run, plan):
     expected = prepare_revision_plan(run, plan["review_sha256"],
         [{k: row[k] for k in ("finding_id", "decision", "reason")} for row in plan["findings"]],
         facts, plan["answers"], plan["essay_type"], plan["writing_sample"], plan["word_limit"], plan["glossary"],
-        plan["knowledge_context"])
+        plan["knowledge_context"], editorial_context=plan.get("editorial_context"))
     if expected != plan:
         raise ValueError("Revision plan source fields or policies differ; prepare a fresh plan.")
     return True
@@ -459,6 +475,10 @@ def _payload(run, plan, stages, stage, current):
                "technical_context": copy.deepcopy(plan["technical_context"]),
                "knowledge_context": copy.deepcopy(plan["knowledge_context"]),
                "current_essay": current}
+    if plan.get("editorial_context") is not None:
+        payload["editorial_context"] = copy.deepcopy(plan["editorial_context"])
+        payload["preferences"] += ("\n\nApplicant's overall editorial feedback (directions and preferences; "
+            "only separately confirmed_facts are factual authority):\n" + plan["editorial_context"]["feedback"])
     if stage == "verify_revision":
         payload["versions"] = {"original": run["snapshot"]["draft"],
                                **{item["stage"]: item["output"]["essay"] for item in stages}}
